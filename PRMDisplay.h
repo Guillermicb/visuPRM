@@ -1,4 +1,4 @@
-/**
+/*******
   * File : RBN.h
   * Description : This class header place and display the attributs ant the links extract form RBN
   * Author : Pierre GOURET & Brice GUILLERMIC
