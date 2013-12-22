@@ -23,8 +23,8 @@
 #include <Board.h>
 
 using namespace LibBoard;
-typedef boost::square_topology<>::point_type Points;
-typedef boost::square_topology<> Topology;
+typedef boost::circle_topology<>::point_type Points;
+typedef boost::circle_topology<> Topology;
 struct VertexProperties
 {
     std::string index;//Classes.Attribut
@@ -91,6 +91,11 @@ namespace prm{
 		Board board;
 		VertexIndexPropertyMap vertexIdPropertyMap;
 		std::vector<ColorClass> listColor;
+
+		void adjustDisplayAfterKamada(const double lenght);
+		void displayKamadaCheck(bool);
+		void addVertex(const std::string&, std::map<std::string, VertexDescriptor>&);
+		void addForeignKeyEdges_multiConnectedAttributs(std::map<std::string, VertexDescriptor>&, const double edgeWweight);
 	public:
 		
 		/*!
@@ -111,11 +116,10 @@ namespace prm{
 		void placeProbabilistLink();
 		void display(const std::string& path, const std::string& name);
 
-		void RBNToGraph(const double attributeWeight, const double classWeight, const double FKWeight);
+		void RBNToGraph(const double attributeWeight, const double FKWeight);
+		void RBNToGraph_AllAttributsConnected(const double attributeWeight, const double FKWeight);
 		void usedKamada(const double sideLenght);
-
-		//template<typename Graph, typename PositionMap, typename Topology>
-		//void print_graph_layout(const Graph& g, PositionMap position, const Topology& topology);
+		
 
 	};
 
