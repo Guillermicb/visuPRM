@@ -96,6 +96,7 @@ namespace prm{
 		void displayKamadaCheck(bool);
 		void addVertex(const std::string&, std::map<std::string, VertexDescriptor>&);
 		void addForeignKeyEdges_multiConnectedAttributs(std::map<std::string, VertexDescriptor>&, const double edgeWweight);
+		void addProbabilistLink(std::map<std::string, VertexDescriptor>&, const double edgeWweight);
 	public:
 		
 		/*!
@@ -117,7 +118,7 @@ namespace prm{
 		void display(const std::string& path, const std::string& name);
 
 		void RBNToGraph(const double attributeWeight, const double FKWeight);
-		void RBNToGraph_AllAttributsConnected(const double attributeWeight, const double FKWeight);
+		void RBNToGraph_AllAttributsConnected(const double attributeWeight, const double FKWeight, const double probWeight);
 		void usedKamada(const double sideLenght);
 		
 

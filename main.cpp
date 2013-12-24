@@ -18,6 +18,7 @@
 #include <string>
 #include "Board.h"
 
+
 using namespace std;
 using namespace LibBoard;
 
@@ -149,11 +150,12 @@ int main(int argc, char **argv) {
 		*/
 
 	// Displaying
+			
 
 	//Etape 1: création du graphe de contrainte
 			  std::cout << "Graphe de contrainte\n";
 			prmdisplay=new prm::PRMDisplay(rbnTest,graph); 
-			prmdisplay->RBNToGraph(1.,5.);
+			prmdisplay->RBNToGraph_AllAttributsConnected(1.,3.,3.);
 
 	// Etape 2: algorithme de placement
 			 std::cout << "Application Kamada\n";
@@ -167,7 +169,7 @@ int main(int argc, char **argv) {
 	prmdisplay->placeProbabilistLink();
 
 	// Etape 4: Affichage en image vectorielle
-	prmdisplay->display("C:\\Users\\Arrizh\\Desktop", "test1");
+	prmdisplay->display("C:/Users/Arrizh/Desktop", "test1");
 
 	//(Anthony) First optional argument is now the google test ::testing::FLAGS_gtest_filter
 	//			Allows to locally update the GTest filter without globally updating the code

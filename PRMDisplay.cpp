@@ -4,6 +4,7 @@
 #include <Shapes.h>
 #include <sstream>
 
+
 using namespace LibBoard;
 using namespace prm;
 
@@ -277,33 +278,35 @@ void PRMDisplay::displayKamadaCheck(bool kamadaResult){
 		std::cerr << "kamada_kawai_spring_layout failed" << std::endl;
 }
 
-void PRMDisplay::RBNToGraph_AllAttributsConnected(const double attributeWeight, const double FKWeight){
+void PRMDisplay::RBNToGraph_AllAttributsConnected(const double attributeWeight, const double FKWeight, const double probWeight){
 	/*rechercher toutes classes et tous les attributs*/
 	std::map<std::string, VertexDescriptor> verticeContainer;
 	RelationalSchema schema = rbn->getSchema();
 	std::vector<std::string> classnames = schema.getClassNames();
 	std::vector<std::string> attributnames;
+	std::string verticeName, secondVertice;
 	
 	for(std::vector<std::string>::iterator classsNameIterator = classnames.begin(); classsNameIterator != classnames.end(); ++classsNameIterator){
-		std::string verticeName = *classsNameIterator;
-		verticeName.append(".");
 		attributnames = schema.getClass(*classsNameIterator).getAttributeNames();
 
 		for(std::vector<std::string>::iterator attributNameIterator = attributnames.begin(); attributNameIterator != attributnames.end(); ++attributNameIterator ){
+			verticeName = *classsNameIterator;
+			verticeName.append(".");
 			verticeName.append(*attributNameIterator);
 			addVertex(verticeName, verticeContainer);
 			
 			if(attributNameIterator != attributnames.begin()){
 				for(std::vector<std::string>::iterator it = attributnames.begin(); it != attributNameIterator; ++it){
-					std::stringstream secondVertice;
-					secondVertice << *classsNameIterator << "." << *it;
-					boost::add_edge(verticeContainer[verticeName], verticeContainer[secondVertice.str()], EdgeProperty(attributeWeight), graph);
-					std::cout << "edge : " << verticeName << " - " << secondVertice.str() << std::endl;
+					secondVertice = *classsNameIterator;
+					secondVertice.append(".");
+					secondVertice.append(*it);
+					boost::add_edge(verticeContainer[verticeName], verticeContainer[secondVertice], EdgeProperty(attributeWeight), graph);
 				}
 			}
 		}
 	}
 	addForeignKeyEdges_multiConnectedAttributs(verticeContainer, FKWeight);
+	addProbabilistLink(verticeContainer, probWeight);
 }
 
 void PRMDisplay::addVertex(const std::string& verticeName, std::map<std::string, VertexDescriptor>& container){
@@ -344,5 +347,24 @@ void PRMDisplay::addForeignKeyEdges_multiConnectedAttributs(std::map<std::string
 		}
 		
 		
+	}
+}
+
+void PRMDisplay::addProbabilistLink(std::map<std::string, VertexDescriptor>& verticeContainer, const double edgeWweight){
+	std::map<std::string, VertexDescriptor>::iterator verticeIterator;
+	std::string vertexName, parentName;
+	prm::RBNVariablesSequence variablesSequence;
+
+
+	for(verticeIterator = verticeContainer.begin(); verticeIterator != verticeContainer.end(); verticeIterator++){
+		vertexName = verticeIterator->first;
+		
+		if(rbn->existsNode(vertexName)){
+			variablesSequence = rbn->getParents(vertexName);
+			for(unsigned int i = 0; i < variablesSequence.dim(); i++){
+				parentName = variablesSequence[i]->toString();
+				boost::add_edge(verticeContainer[vertexName], verticeContainer[parentName], EdgeProperty(edgeWweight), graph);
+			}
+		}
 	}
 }
