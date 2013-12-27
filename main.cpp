@@ -18,6 +18,7 @@
 #include <string>
 #include "Board.h"
 
+
 using namespace std;
 using namespace LibBoard;
 
@@ -27,6 +28,7 @@ int main(int argc, char **argv) {
 		boost::shared_ptr<prm::RBN> rbnTest;
 		Graph graph;
 		float compt=0.0;
+		prm::PRMDisplay* prmdisplay;
 	///PRM definition
 
 		//// A = Relational Schema definition
@@ -47,6 +49,9 @@ int main(int argc, char **argv) {
 			prm::Attribute popularity		("Popularity",		boost::shared_ptr<prm::Domain>());
 			prm::Attribute rating			("Rating",			boost::shared_ptr<prm::Domain>());
 			prm::Attribute profID			("IDprof",			boost::shared_ptr<prm::Domain>());
+			prm::Attribute courseID			("IDCourse",			boost::shared_ptr<prm::Domain>());
+			prm::Attribute studentID		("IDStudent",			boost::shared_ptr<prm::Domain>());
+			prm::Attribute regID		("IDRegistration",			boost::shared_ptr<prm::Domain>());
 
 			/// A2 - Foreign Keys attributes
 			prm::Attribute studentRef("Student", rankingDomain);
@@ -56,17 +61,18 @@ int main(int argc, char **argv) {
 			/// A3 - Classes definitions
 
 			//Create classes
-			prm::Class student("Student"), registration("Registration"), professor("Professor"), course("Course");
+			prm::Class professor("Professor"), course("Course"), student("Student"), registration("Registration");
 			
 			//Add attributes (descriptive + FK)
+			student.addAttribute(studentID);
 			student.addAttribute(ranking);
 			student.addAttribute(intelligence);
-
+			registration.addAttribute(regID);
 			registration.addAttribute(grade);
 			registration.addAttribute(satisfaction);
 			registration.addAttribute(studentRef);
 			registration.addAttribute(courseRef);
-
+			course.addAttribute(courseID);
 			course.addAttribute(difficulty);
 			course.addAttribute(rating);
 			course.addAttribute(instructorRef);
@@ -81,8 +87,18 @@ int main(int argc, char **argv) {
 			//Add primary Key
 			std::vector<std::string> PKprof;
 			PKprof.push_back("IDprof");
-
 			professor.setPK(PKprof);
+			std::vector<std::string> PKstudent;
+			std::vector<std::string> PKcourse;
+			PKcourse.push_back("IDCourse");
+			course.setPK(PKcourse);
+			PKstudent.push_back("IDStudent");
+			student.setPK(PKstudent);
+			
+			std::vector<std::string> PKreg;
+			PKreg.push_back("IDRegistration");
+			registration.setPK(PKreg);
+
 
 			//Add classes
 			schema->addClass(student);
@@ -92,8 +108,8 @@ int main(int argc, char **argv) {
 			
 
 			//Define reference slots (FK constraints)
-			/*schema->addReferenceSlot("Registration", "Student", "Student");
-			schema->addReferenceSlot("Registration", "Course", "Course");*/
+			schema->addReferenceSlot("Registration", "Student", "Student");
+			schema->addReferenceSlot("Registration", "Course", "Course");
 			schema->addReferenceSlot("Course", "Instructor", "Professor");
 			
 			//// B = RBN definition
@@ -104,13 +120,13 @@ int main(int argc, char **argv) {
 
 			/// B2 - Set dependencies between nodes
 			rbnTest->setParents("Course.Rating", "Course.Instructor>Professor.TeachingAbility, Course.Instructor>Professor.Popularity");
-			//rbnTest->setParents("Registration.Grade",	"Registration.Course>Course.Difficulty, Registration.Student>Student.Intelligence");
-			/*rbnTest->setParents("Course.Rating",		"MODE(~Registration.Course>Registration.Satisfaction)");
+			rbnTest->setParents("Registration.Grade",	"Registration.Course>Course.Difficulty, Registration.Student>Student.Intelligence");
+			rbnTest->setParents("Course.Rating",		"MODE(~Registration.Course>Registration.Satisfaction)");
 			rbnTest->setParents("Student.Ranking",		"MODE(~Registration.Student>Registration.Grade)");
 			rbnTest->setParents("Registration.Satisfaction", "Registration.Course>Course.Instructor>Professor.TeachingAbility, Registration.Grade");
 			
 			/// B3 - Set Probabilities associated to nodes dependencies
-			plProbValue probas1[] = {0.33, 0.34, 0.33, 0.65, 0.25, 0.1, 0.85, 0.1, 0.05, 0.05, 0.10, 0.85, 0.1, 0.25, 0.65, 0.33, 0.34, 0.33};
+			/*plProbValue probas1[] = {0.33, 0.34, 0.33, 0.65, 0.25, 0.1, 0.85, 0.1, 0.05, 0.05, 0.10, 0.85, 0.1, 0.25, 0.65, 0.33, 0.34, 0.33};
 			rbnTest->setDistributionTable("Registration.Satisfaction", rbnTest->getParents("Registration.Satisfaction"), initVector(probas1, 18));
 
 			plProbValue probas2[] = {0.3, 0.6, 0.1, 0.8, 0.1, 0.1, 0.1, 0.5, 0.4, 0.5, 0.4, 0.1};
@@ -134,72 +150,26 @@ int main(int argc, char **argv) {
 		*/
 
 	// Displaying
+			
 
-			//Etape 1: création du graphe de contrainte
-    VertexIndexPropertyMap vertexIdPropertyMap = boost::get(&VertexProperties::index, graph);
-	PositionMap positionMap = boost::get(&VertexProperties::point, graph);
+	//Etape 1: création du graphe de contrainte
+			  std::cout << "Graphe de contrainte\n";
+			prmdisplay=new prm::PRMDisplay(rbnTest,graph); 
+			prmdisplay->RBNToGraph_AllAttributsConnected(1.,3.,3.);
 
-
-        VirtexDescriptor vd = boost::add_vertex(graph);
-
-        vertexIdPropertyMap[vd] = "Professor.Popularity";
-		positionMap[vd][0]=1;
-		positionMap[vd][1]=1;
-		
-		vd = boost::add_vertex(graph);
-        vertexIdPropertyMap[vd] = "Course.Rating";
-		positionMap[vd][0]=5.0;
-		positionMap[vd][1]=5.0;
-
-
-		 vd = boost::add_vertex(graph);
-        vertexIdPropertyMap[vd] = "Professor.TeachingAbility";
-		positionMap[vd][0]=1;
-		positionMap[vd][1]=8.0;
-	
-		vd = boost::add_vertex(graph);
-        vertexIdPropertyMap[vd] = "Course.Instructor";
-		positionMap[vd][0]=5.0;
-		positionMap[vd][1]=1;
-	   
-
-		vd = boost::add_vertex(graph);
-        vertexIdPropertyMap[vd] = "Professor.IDprof";
-		positionMap[vd][0]=10;
-		positionMap[vd][1]=8;
-	
-    
-    boost::add_edge(boost::vertex(1, graph), boost::vertex(0, graph), EdgeProperty(5), graph);
-    boost::add_edge(boost::vertex(2, graph), boost::vertex(0, graph), EdgeProperty(5), graph);
-
-    std::cout << "Vertices\n";
-    boost::print_vertices(graph, vertexIdPropertyMap);
-
-    std::cout << "Edges\n";
-    boost::print_edges(graph, vertexIdPropertyMap);
-
-    
-    WeightPropertyMap weightPropertyMap = boost::get(&EdgeProperty::weight, graph);
-	/*
 	// Etape 2: algorithme de placement
-    boost::circle_graph_layout(graph, positionMap, 100);
-   // boost::fruchterman_reingold_force_directed_layout(graph, positionMap, boost::square_topology<>());
-
-    boost::kamada_kawai_spring_layout(graph, positionMap, weightPropertyMap,
-        boost::square_topology<>(), boost::side_length<double>(10), boost::layout_tolerance<>(),
-        1, vertexIdPropertyMap);
-		//blabla
-		*/
+			 std::cout << "Application Kamada\n";
+			prmdisplay->usedKamada(30.0);
 	
 	// Etape 3: Création graphique
     std::cout << "Coordinates\n";
-	prm::PRMDisplay* prmdisplay=new prm::PRMDisplay(rbnTest,positionMap,vertexIdPropertyMap, graph); 
+	
 	prmdisplay->placeVertex();
 	prmdisplay->placeRelationnalLink(); 
 	prmdisplay->placeProbabilistLink();
 
 	// Etape 4: Affichage en image vectorielle
-	prmdisplay->display("C:\\Users\\pierre\\Desktop", "test1");
+	prmdisplay->display("C:/Users/Arrizh/Desktop", "test1");
 
 	//(Anthony) First optional argument is now the google test ::testing::FLAGS_gtest_filter
 	//			Allows to locally update the GTest filter without globally updating the code

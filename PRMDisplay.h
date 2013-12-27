@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 /*******test
+=======
+/**
+>>>>>>> 9574ddb65134311d17d947034621e3e48b03a2ef
   * File : RBN.h
   * Description : This class header place and display the attributs ant the links extract form RBN
   * Author : Pierre GOURET & Brice GUILLERMIC
@@ -14,6 +18,7 @@
 #include <boost/graph/simple_point.hpp>
 #include <boost/property_map/property_map.hpp>
 #include <boost/graph/circle_layout.hpp>
+#include <boost/graph/random_layout.hpp>
 #include <boost/graph/fruchterman_reingold.hpp>
 #include <boost/graph/kamada_kawai_spring_layout.hpp>
 #include <iostream>
@@ -22,18 +27,41 @@
 #include <Board.h>
 
 using namespace LibBoard;
-typedef boost::square_topology<>::point_type Points;
-
+typedef boost::circle_topology<>::point_type Points;
+typedef boost::circle_topology<> Topology;
 struct VertexProperties
 {
     std::string index;//Classes.Attribut
     Points point;
 };
 
+struct kamada_kawai_done 
+{
+  kamada_kawai_done() : last_delta() {}
+
+  template<typename Graph>
+  bool operator()(double delta_p, 
+                  typename boost::graph_traits<Graph>::vertex_descriptor /*p*/,
+                  const Graph& /*g*/,
+                  bool global)
+  {
+    if (global) {
+      double diff = last_delta - delta_p;
+      if (diff < 0) diff = -diff;
+      last_delta = delta_p;
+      return diff < 0.01;
+    } else {
+      return delta_p < 0.01;
+    }
+  }
+
+  double last_delta;
+};
+
 struct EdgeProperty
 {
 	EdgeProperty(){}
-    EdgeProperty(const std::size_t &w):weight(w) {}
+    EdgeProperty(const double &w):weight(w) {}
     double weight;
 };
 
@@ -42,11 +70,12 @@ typedef boost::adjacency_list<boost::vecS,
             boost::vecS, boost::undirectedS,
             VertexProperties, EdgeProperty > Graph;
 
+
 typedef boost::property_map<Graph, std::string VertexProperties::*>::type VertexIndexPropertyMap;
 typedef boost::property_map<Graph, Points VertexProperties::*>::type PositionMap;
 typedef boost::property_map<Graph, double EdgeProperty::*>::type WeightPropertyMap;
 
-typedef boost::graph_traits<Graph>::vertex_descriptor VirtexDescriptor;
+typedef boost::graph_traits<Graph>::vertex_descriptor VertexDescriptor;
 
 
 typedef struct ColorClass {
@@ -66,6 +95,12 @@ namespace prm{
 		Board board;
 		VertexIndexPropertyMap vertexIdPropertyMap;
 		std::vector<ColorClass> listColor;
+
+		void adjustDisplayAfterKamada(const double lenght);
+		void displayKamadaCheck(bool);
+		void addVertex(const std::string&, std::map<std::string, VertexDescriptor>&);
+		void addForeignKeyEdges_multiConnectedAttributs(std::map<std::string, VertexDescriptor>&, const double edgeWweight);
+		void addProbabilistLink(std::map<std::string, VertexDescriptor>&, const double edgeWweight);
 	public:
 		
 		/*!
@@ -73,9 +108,10 @@ namespace prm{
 		 * \param schema : the RelationalSchema giving the domain and the structure of the problem to modelize
 		 */
 		PRMDisplay();
-		PRMDisplay(const boost::shared_ptr<prm::RBN> rbn);
+		PRMDisplay(const boost::shared_ptr<prm::RBN> rbn,const Graph& graph);
 		PRMDisplay(const boost::shared_ptr<prm::RBN> rbn, const PositionMap& postionMap, const VertexIndexPropertyMap& vertexNamemap,const Graph& graph);
 		PRMDisplay(const PositionMap& postionMap, const VertexIndexPropertyMap& vertexNamemap, const Graph& graph);
+
 		/*!
 		 * \brief Dtor.
 		 */
@@ -84,6 +120,11 @@ namespace prm{
 		void placeRelationnalLink();
 		void placeProbabilistLink();
 		void display(const std::string& path, const std::string& name);
+
+		void RBNToGraph(const double attributeWeight, const double FKWeight);
+		void RBNToGraph_AllAttributsConnected(const double attributeWeight, const double FKWeight, const double probWeight);
+		void usedKamada(const double sideLenght);
+		
 
 	};
 
