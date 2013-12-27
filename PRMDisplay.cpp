@@ -14,6 +14,7 @@ PRMDisplay::PRMDisplay(const boost::shared_ptr<prm::RBN> rbn, const Graph& graph
 	board.setPenColorRGBi( 255, 0, 0);
 	board.setLineWidth( 1 );
 	srand (time(NULL));
+	delta=0.01;
 	
 }
 PRMDisplay::PRMDisplay(const boost::shared_ptr<prm::RBN> rbn, const PositionMap& postionMap, const VertexIndexPropertyMap& vertexNamemap, const Graph& graph):rbn(rbn), positionMap(postionMap), vertexIdPropertyMap(vertexNamemap), graph(graph){
@@ -45,7 +46,16 @@ void PRMDisplay::placeVertex(){
     for (boost::tie(i, end) = boost::vertices(graph); i != end; ++i) {
         std::cout << "ID: (" << vertexIdPropertyMap[*i] << ") x: " << positionMap[*i][0] << " y: " << positionMap[*i][1] << "\n";
 		std::string classename=vertexIdPropertyMap[*i].substr(0,vertexIdPropertyMap[*i].find("."));
-		bool trouve=false;
+		// couleur
+		makeVertexColor(classename);
+		board.drawText(positionMap[*i][0]+.1,positionMap[*i][1]+0.4, vertexIdPropertyMap[*i] );
+    }
+	placeClasse();
+
+}
+
+void PRMDisplay::makeVertexColor(const std::string& classename){
+	bool trouve=false;
 		if (listColor.empty()){
 			ColorClass c;
 			c.classeName=classename;
@@ -58,14 +68,12 @@ void PRMDisplay::placeVertex(){
 
 			
 			for (std::vector<ColorClass>::iterator it = listColor.begin();it != listColor.end(); ++it){
-				std::cout<<"\t"<<it->classeName<<std::endl;
 				if (it->classeName.compare(classename)==0){
 				 trouve=true;
 				 board.setPenColorRGBi(it->red, it->green, it->blue);
 				 break;
 				}
 			}
-			std::cout<<"\t"<<"fin du while"<<std::endl;
 			if(!trouve){
 				ColorClass c;
 				c.classeName=classename;
@@ -76,62 +84,111 @@ void PRMDisplay::placeVertex(){
 				board.setPenColorRGBi(c.red, c.green, c.blue);
 			}
 		}
-		/*
-		if (!colorclasse.empty()){
-			std::map<std::string,Color>::iterator it1=colorclasse.find(classename);
-			if (it1==colorclasse.end()){
-				Color c=  new Color(rand() / 255, rand() / 255, rand() / 255);
-				board.setPenColorRGBi(rand() / 255, rand() / 255, rand() / 255 );
-				colorclasse.insert(std::pair<std::string, Color>(classename , c));
-			}
-		}else{
-			Color c=  new Color(rand() / 255, rand() / 255, rand() / 255);
-			board.setPenColorRGBi(rand() / 255, rand() / 255, rand() / 255);
-			colorclasse.insert(std::pair<std::string, Color>(classename , c));
-			
-		}
-	*/
-		board.drawRectangle(positionMap[*i][0],positionMap[*i][1], 3,.5);
-		board.drawText(positionMap[*i][0]+.1,positionMap[*i][1]+0.4, vertexIdPropertyMap[*i] );
-		
-    }
-	
-
 }
+
+void PRMDisplay::placeClasse(){
+	boost::graph_traits<Graph>::vertex_iterator i, end;
+    for (boost::tie(i, end) = boost::vertices(graph); i != end; ++i) {
+		std::string classename=vertexIdPropertyMap[*i].substr(0,vertexIdPropertyMap[*i].find("."));
+		bool trouve=false;
+		if (listRect.empty()){
+			RectClass c;
+			c.classeName=classename;
+			c.x=positionMap[*i][0];
+			c.y=positionMap[*i][1];
+			c.len=3;
+			c.hei=.5;
+			listRect.push_back(c);
+			
+		}else{		
+			for (std::vector<RectClass>::iterator it = listRect.begin();it != listRect.end(); ++it){
+				if (it->classeName.compare(classename)==0){
+					trouve=true;
+					// je regle la longueur du rectangle
+					if ((it->x<=positionMap[*i][0]) && ((it->x)+(it->len)>=(positionMap[*i][0]+3))) {
+
+					}else if (it->x>positionMap[*i][0]){
+						it->len+=std::abs(it->x-positionMap[*i][0]);
+					}else if ((it->x)+(it->len)<(positionMap[*i][0]+3)){
+						it->len+=std::abs(positionMap[*i][0]+3-(it->x+it->len));
+					}
+					// je regle la hauteur du rectangle
+					if ((it->y<=positionMap[*i][1]) && ((it->y)+(it->hei)>=(positionMap[*i][1]+.5))) {
+
+					}else if (it->y>positionMap[*i][1]){
+						it->hei+=std::abs(it->y-positionMap[*i][1]);
+					}else if ((it->y)+(it->hei)<(positionMap[*i][1]+.5)){
+						it->hei+=std::abs(positionMap[*i][1]+.5-(it->y+it->hei));
+					}
+					//je regle le point en haut à gauche du rectangle
+					if (it->x>positionMap[*i][0]) { it->x=positionMap[*i][0];}
+					if (it->y>positionMap[*i][1]) { it->y=positionMap[*i][1];}
+								
+				 break;
+				}
+			}
+			
+			if(!trouve){
+				std::cout<<"Classe: "<<classename<<std::endl;
+				RectClass c;
+				c.classeName=classename;
+				c.x=positionMap[*i][0];
+				c.y=positionMap[*i][1];
+				c.len=3;
+				c.hei=.5;
+				listRect.push_back(c);
+			}
+		}
+	}
+	// je dessine les rectangles de classe avec la bonne couleur de pinceau
+	for (std::vector<RectClass>::iterator it = listRect.begin();it != listRect.end(); ++it){
+		for (std::vector<ColorClass>::iterator it1 = listColor.begin();it1 != listColor.end(); ++it1){
+				if (it1->classeName.compare(it->classeName)==0){
+				 board.setPenColorRGBi(it1->red, it1->green, it1->blue);
+				 break;
+				}
+			}
+		board.drawRectangle(it->x-delta,it->y-delta,it->len+delta,it->hei+delta);
+	}
+}
+
 void PRMDisplay::placeRelationnalLink(){
 	board.setPenColorRGBi( 255, 0, 0);
-	std::cout<<"Place Relationnal Link"<<std::endl;
+	
 	std::map<std::string, std::string> result; // model (classe.FK, classe1.PK)
 	RefSlotsMultimap refSlots = rbn->getSchema().getRefSlots();
 	// Fisrt: get all the link between PK and FK	
 	for(RefSlotsMultimap::iterator rb = refSlots.begin(); rb != refSlots.end(); ++rb){
-		std::cout << "\t\t<rbn-ClassesLink from='" << rb->first << "' to='" << rb->second.second->getName() << "' fk='" << rb->second.first.getName() << "'/>" << std::endl;
 		std::string classPK=rb->second.second->getName().c_str();
-		std::string attPK= rbn->getSchema().getClass(classPK).getPK().front();
-		classPK.append(".");
-		classPK.append(attPK);
-		//std::cout << "\t primaryKey "<<classPK;
 		std::string classFK=rb->first.c_str();;
 		classFK.append(".");
 		classFK.append(rb->second.first.getName());
-		//std::cout << "\t foriegnKey "<<classPK;
 		result.insert(std::pair<std::string, std::string>(classFK, classPK));
 	}
 	// Second: display the links
 	boost::graph_traits<Graph>::vertex_iterator i, end;
-	boost::graph_traits<Graph>::vertex_iterator i1, end1;
 	for (std::map<std::string,std::string>::iterator it=result.begin(); it!=result.end(); ++it){
-		std::cout<<" first "<< it->first<< "second "<< it->second <<std::endl;
-
 		for (boost::tie(i, end) = boost::vertices(graph); i != end; ++i) {
 			if (vertexIdPropertyMap[*i].compare(it->first)==0) {
-				std::cout<<" first "<< it->first<< " coordonées "<< positionMap[*i][0]<<" "<<positionMap[*i][1] <<std::endl;
-				for (boost::tie(i1, end1) = boost::vertices(graph); i1 != end1; ++i1) {
-					if (vertexIdPropertyMap[*i1].compare(it->second)==0) {
-						std::cout<<" second "<< it->first<< " coordonées "<< positionMap[*i1][0]<<" "<<positionMap[*i1][1] <<std::endl;
-						std::cout<<" " <<positionMap[*i][0]<<" "<<positionMap[*i][1]<<" "<< positionMap[*i1][0]<<" "<<positionMap[*i1][1]<<" "<<std::endl;
-						// A FAIRE:comparer les position pour placer x et Y correctement
-						board.drawLine(positionMap[*i][0],positionMap[*i][1]+0.4, positionMap[*i1][0],positionMap[*i1][1]);
+				for (std::vector<RectClass>::iterator it1 = listRect.begin();it1 != listRect.end(); ++it1){
+					if (it->second.compare(it1->classeName)==0) {
+						float x1,x2,y1,y2;
+							x1=positionMap[*i][0];
+							y1=positionMap[*i][1];
+							x2=it1->x;
+							y2=it1->y;
+							// Comparer les position pour placer x et Y correctement pour l'attribut et pour la classe reférente
+							if (positionMap[*i][1]<it1->y){// le noeud 1 est plus haut que noeud 2
+								y1+=.5;
+							}else {
+								y2+=it1->hei;
+							}
+							if (positionMap[*i][0]<it1->x){// le noeud 1 est plus droite que noeud 2
+								x1+=3;
+							}else {
+								x2+=it1->len;
+							}
+						board.drawLine(x1,y1,x2,y2);
 						break;
 					}
 				}
@@ -141,27 +198,37 @@ void PRMDisplay::placeRelationnalLink(){
 	}
 				
 }
+
 void PRMDisplay::placeProbabilistLink(){ 
 	board.setPenColorRGBi( 0, 0,255);
-	std::cout<<"Place Probabilist Link"<<std::endl;
 	boost::graph_traits<Graph>::vertex_iterator i, end;
 	RBNVariablesSequence seq;
 	 for (boost::tie(i, end) = boost::vertices(graph); i != end; i++) {
 		
 		if (rbn->existsNode(vertexIdPropertyMap[*i])){
 			seq=rbn->getParents(vertexIdPropertyMap[*i]);
-			//std::cout<< "son 2: "<< vertexIdPropertyMap[*i]<<std::endl;
 			if (seq.dim()>0) {
-				//std::cout<< "pas vide"<<std::endl;
 				for(unsigned int j = 0; j < seq.dim(); j++){
-					//std::cout<< "size: "<<seq.dim()<<" parents " <<dynamic_pointer_cast<IRBNSimpleVariable>(seq[j])->getBaseName()<<std::endl;
 					boost::graph_traits<Graph>::vertex_iterator i1, end1;
 					for (boost::tie(i1, end1) = boost::vertices(graph); i1 != end1; ++i1) {
 						if (vertexIdPropertyMap[*i1].compare(dynamic_pointer_cast<IRBNSimpleVariable>(seq[j])->getBaseName())==0){
-						
-							// comparer les position pour placer x et Y correctement
-							board.drawArrow(positionMap[*i1][0],positionMap[*i1][1], positionMap[*i][0],positionMap[*i][1]);
-							std::cout<<" " <<positionMap[*i1][0]<<" "<<positionMap[*i1][1]<<" "<< positionMap[*i][0]<<" "<<positionMap[*i][1]<<" "<<std::endl;
+							float x1,x2,y1,y2;
+							x1=positionMap[*i1][0];
+							y1=positionMap[*i1][1];
+							x2=positionMap[*i][0];
+							y2=positionMap[*i][1];
+							// Comparer les position pour placer x et Y correctement
+							if (positionMap[*i1][1]<positionMap[*i][1]){// le noeud 1 est plus haut que noeud 2
+								y1+=.5;
+							}else {
+								y2+=.5;
+							}
+							if (positionMap[*i1][0]<positionMap[*i][0]){// le noeud 1 est plus droite que noeud 2
+								x1+=3;
+							}else {
+								x2+=3;
+							}
+							board.drawArrow(x1,y1, x2,y2);
 							break;
 						}
 					}
@@ -172,6 +239,7 @@ void PRMDisplay::placeProbabilistLink(){
 			
 	
 }
+
 void PRMDisplay::display(const std::string& path, const std::string& name){
 	std::string completepath;
 	completepath.append(path);

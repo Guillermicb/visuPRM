@@ -81,6 +81,14 @@ typedef struct ColorClass {
 	std::string classeName;
 };
 
+typedef struct RectClass {
+	float x; 
+	float y; 
+	float len;
+	float hei;
+	std::string classeName;
+};
+
 namespace prm{
 
 	class PRMDisplay{
@@ -91,7 +99,8 @@ namespace prm{
 		Board board;
 		VertexIndexPropertyMap vertexIdPropertyMap;
 		std::vector<ColorClass> listColor;
-
+		std::vector<RectClass> listRect;
+		float delta; // espace entre les attributs et le rectangle de la classe
 		void adjustDisplayAfterKamada(const double lenght);
 		void displayKamadaCheck(bool);
 		void addVertex(const std::string&, std::map<std::string, VertexDescriptor>&);
@@ -115,6 +124,8 @@ namespace prm{
 		void placeVertex();
 		void placeRelationnalLink();
 		void placeProbabilistLink();
+		void placeClasse();
+		void makeVertexColor(const std::string& colorname);
 		void display(const std::string& path, const std::string& name);
 
 		void RBNToGraph(const double attributeWeight, const double FKWeight);
