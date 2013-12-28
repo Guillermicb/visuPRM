@@ -314,7 +314,7 @@ void PRMDisplay::RBNToGraph(const double attributeWeight, const double FKWeight)
 
 void PRMDisplay::usedKamada(const double sidelength){
 	boost::minstd_rand gen;
-	Topology topology(gen, 50.0);
+	Topology topology(gen, sidelength);
 
 	WeightPropertyMap weightPropertyMap = boost::get(&EdgeProperty::weight, graph);
 	boost::circle_graph_layout(graph, positionMap, sidelength);
@@ -333,10 +333,26 @@ void PRMDisplay::usedKamada(const double sidelength){
 
 void PRMDisplay::adjustDisplayAfterKamada(const double length){
 	boost::graph_traits<Graph>::vertex_iterator i, end;
+	Topology topology;
+	Points min_point = positionMap[*vertices(graph).first], max_point = min_point;
+	const int margin = 1;
+
 	for (boost::tie(i, end) = boost::vertices(graph); i != end; ++i) {
-		positionMap[*i][0] += length;
-		positionMap[*i][1] += length;
+		min_point = topology.pointwise_min(min_point, positionMap[*i]);
+		//max_point = topology.pointwise_max(max_point, positionMap[*i]);
 	}
+	if(min_point[0] > 0)
+		min_point[0] = 0;
+
+	if(min_point[1] > 0)
+		min_point[1] = 0;
+
+	for (boost::tie(i, end) = boost::vertices(graph); i != end; ++i) {
+		positionMap[*i][0] += margin - min_point[0];
+		positionMap[*i][1] += margin - min_point[1];
+	}
+ 
+
 }
 
 void PRMDisplay::displayKamadaCheck(bool kamadaResult){

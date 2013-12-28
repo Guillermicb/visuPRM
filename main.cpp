@@ -159,7 +159,7 @@ int main(int argc, char **argv) {
 
 	// Etape 2: algorithme de placement
 			 std::cout << "Application Kamada\n";
-			prmdisplay->usedKamada(70.0);
+			prmdisplay->usedKamada(50.0);
 	
 	// Etape 3: Création graphique
     std::cout << "Coordinates\n";
