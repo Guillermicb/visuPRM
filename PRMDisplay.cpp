@@ -413,8 +413,6 @@ void PRMDisplay::addForeignKeyEdges_multiConnectedAttributs(std::map<std::string
 				  boost::add_edge(verticeContainer[vertice1.str()], verticeContainer[vertice2.str()], EdgeProperty(edgeWweight), graph);
 			}
 		}
-		
-		
 	}
 }
 
@@ -434,5 +432,46 @@ void PRMDisplay::addProbabilistLink(std::map<std::string, VertexDescriptor>& ver
 				boost::add_edge(verticeContainer[vertexName], verticeContainer[parentName], EdgeProperty(edgeWweight), graph);
 			}
 		}
+	}
+}
+
+void PRMDisplay::RBNToGraph_ArtificialClassVertex(const double attributeWeight, const double FKWeight, const double probWeight){
+	/*rechercher toutes classes et tous les attributs*/
+	std::map<std::string, VertexDescriptor> verticeContainer;
+	RelationalSchema schema = rbn->getSchema();
+	std::vector<std::string> classnames = schema.getClassNames();
+	std::vector<std::string> attributnames;
+	std::string verticeName;
+	
+	for(std::vector<std::string>::iterator classsNameIterator = classnames.begin(); classsNameIterator != classnames.end(); ++classsNameIterator){
+		attributnames = schema.getClass(*classsNameIterator).getAttributeNames();
+		addVertex(*classsNameIterator, verticeContainer);
+
+		for(std::vector<std::string>::iterator attributNameIterator = attributnames.begin(); attributNameIterator != attributnames.end(); ++attributNameIterator ){
+			verticeName = *classsNameIterator;
+			verticeName.append(".");
+			verticeName.append(*attributNameIterator);
+			addVertex(verticeName, verticeContainer);
+			
+			boost::add_edge(verticeContainer[*classsNameIterator], verticeContainer[verticeName], EdgeProperty(attributeWeight), graph);
+		}
+	}
+	addForeignKeyEdges_artificialClassVertex(verticeContainer, FKWeight);
+	addProbabilistLink(verticeContainer, probWeight);
+}
+
+void PRMDisplay::addForeignKeyEdges_artificialClassVertex(std::map<std::string, VertexDescriptor>& verticeContainer, const double edgeWweight){
+	RefSlotsMultimap foreignKeys = rbn->getSchema().getRefSlots();
+	std::string classFrom, classTo, attrFrom;
+
+	for(RefSlotsMultimap::iterator refSlotIterator = foreignKeys.begin(); refSlotIterator != foreignKeys.end(); ++refSlotIterator){
+		classFrom = refSlotIterator->first;
+		classTo = refSlotIterator->second.second->getName();
+		attrFrom = classFrom;
+		attrFrom.append(".");
+		attrFrom.append(refSlotIterator->second.first.getName());
+		
+		//boost::add_edge(verticeContainer[classFrom], verticeContainer[classTo], EdgeProperty(edgeWweight), graph);
+		boost::add_edge(verticeContainer[attrFrom], verticeContainer[classTo], EdgeProperty(edgeWweight), graph);
 	}
 }

@@ -155,11 +155,11 @@ int main(int argc, char **argv) {
 	//Etape 1: création du graphe de contrainte
 			  std::cout << "Graphe de contrainte\n";
 			prmdisplay=new prm::PRMDisplay(rbnTest,graph); 
-			prmdisplay->RBNToGraph_AllAttributsConnected(1.,3.,3.);
+			prmdisplay->RBNToGraph_ArtificialClassVertex(1.,3.,3.);
 
 	// Etape 2: algorithme de placement
 			 std::cout << "Application Kamada\n";
-			prmdisplay->usedKamada(30.0);
+			prmdisplay->usedKamada(70.0);
 	
 	// Etape 3: Création graphique
     std::cout << "Coordinates\n";
