@@ -341,11 +341,6 @@ void PRMDisplay::adjustDisplayAfterKamada(const double length){
 		min_point = topology.pointwise_min(min_point, positionMap[*i]);
 		//max_point = topology.pointwise_max(max_point, positionMap[*i]);
 	}
-	if(min_point[0] > 0)
-		min_point[0] = 0;
-
-	if(min_point[1] > 0)
-		min_point[1] = 0;
 
 	for (boost::tie(i, end) = boost::vertices(graph); i != end; ++i) {
 		positionMap[*i][0] += margin - min_point[0];
