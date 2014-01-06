@@ -121,7 +121,7 @@ namespace prm{
 		/*!
 		 * \brief Dtor.
 		 */
-		 ~PRMDisplay();
+		// ~PRMDisplay();
 		void placeVertex();
 		void placeRelationnalLink();
 		void placeProbabilistLink();

@@ -150,26 +150,35 @@ int main(int argc, char **argv) {
 		*/
 
 	// Displaying
-			
-
-	//Etape 1: création du graphe de contrainte
-			  std::cout << "Graphe de contrainte\n";
-			prmdisplay=new prm::PRMDisplay(rbnTest,graph); 
-			prmdisplay->RBNToGraph_ArtificialClassVertex(1.,3.,3.);
+	double indice = 1.;
+	std::string mySvgFile, tmp = "";
+	for(int i=0;i<19;i++){
+//Etape 1: création du graphe de contrainte
+		mySvgFile.append("test");
+		tmp = boost::lexical_cast<std::string>(i);
+		mySvgFile.append(tmp);
+		std::cout << "Graphe de contrainte\n";
+		prmdisplay=new prm::PRMDisplay(rbnTest,graph); 
+		prmdisplay->RBNToGraph_ArtificialClassVertex(1.,indice,indice);
 
 	// Etape 2: algorithme de placement
-			 std::cout << "Application Kamada\n";
-			prmdisplay->usedKamada(50.0);
+		std::cout << "Application Kamada\n";
+		prmdisplay->usedKamada(50.0);
 	
 	// Etape 3: Création graphique
-    std::cout << "Coordinates\n";
+		std::cout << "Coordinates\n";
 	
-	prmdisplay->placeVertex();
-	prmdisplay->placeRelationnalLink(); 
-	prmdisplay->placeProbabilistLink();
+		prmdisplay->placeVertex();
+		prmdisplay->placeRelationnalLink(); 
+		prmdisplay->placeProbabilistLink();
 
 	// Etape 4: Affichage en image vectorielle
-	prmdisplay->display("C:/Users/Arrizh/Desktop", "test1");
+		prmdisplay->display("C:/Users/Arrizh/Desktop/testPred", mySvgFile);
+		delete prmdisplay;
+		indice += .5;
+
+	}
+	
 
 	//(Anthony) First optional argument is now the google test ::testing::FLAGS_gtest_filter
 	//			Allows to locally update the GTest filter without globally updating the code
