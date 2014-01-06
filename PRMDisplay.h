@@ -31,29 +31,6 @@ struct VertexProperties
     Points point;
 };
 
-struct kamada_kawai_done 
-{
-  kamada_kawai_done() : last_delta() {}
-
-  template<typename Graph>
-  bool operator()(double delta_p, 
-                  typename boost::graph_traits<Graph>::vertex_descriptor /*p*/,
-                  const Graph& /*g*/,
-                  bool global)
-  {
-    if (global) {
-      double diff = last_delta - delta_p;
-      if (diff < 0) diff = -diff;
-      last_delta = delta_p;
-      return diff < 0.01;
-    } else {
-      return delta_p < 0.01;
-    }
-  }
-
-  double last_delta;
-};
-
 struct EdgeProperty
 {
 	EdgeProperty(){}

@@ -152,9 +152,9 @@ int main(int argc, char **argv) {
 	// Displaying
 	double indice = 1.;
 	std::string mySvgFile, tmp = "";
-	for(int i=0;i<19;i++){
+	for(int i=0;i<20;i++){
 //Etape 1: création du graphe de contrainte
-		mySvgFile.append("test");
+		mySvgFile = "test";
 		tmp = boost::lexical_cast<std::string>(i);
 		mySvgFile.append(tmp);
 		std::cout << "Graphe de contrainte\n";

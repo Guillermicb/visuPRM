@@ -324,7 +324,7 @@ void PRMDisplay::usedKamada(const double sidelength){
                                        weightPropertyMap,
 									   topology,
                                        side_length(sidelength),
-                                       kamada_kawai_done());
+									   boost::layout_tolerance<>());
 	
 	displayKamadaCheck(result);
 	adjustDisplayAfterKamada(sidelength);
