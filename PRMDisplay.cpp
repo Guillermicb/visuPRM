@@ -149,6 +149,9 @@ void PRMDisplay::placeClasse(){
 				}
 			}
 		board.drawRectangle(it->x-delta,it->y-delta,it->len+delta,it->hei+delta);
+		board.drawRectangle(it->x-delta,it->y-delta-1,it->len+delta,1);
+		board.drawText(positionMap[*i][0]+.1,positionMap[*i][1]+0.4, vertexIdPropertyMap[*i].substr(vertexIdPropertyMap[*i].find(".")+1, vertexIdPropertyMap[*i].length()) );
+		it->y+=-1; it->hei+=1;
 	}
 }
 
