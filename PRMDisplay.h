@@ -39,6 +39,12 @@ struct EdgeProperty
 };
 
 
+struct Extremite_Segment
+{
+    int x;
+    int y;
+};
+
 typedef boost::adjacency_list<boost::vecS,
             boost::vecS, boost::undirectedS,
             VertexProperties, EdgeProperty > Graph;

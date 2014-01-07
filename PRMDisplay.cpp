@@ -48,7 +48,7 @@ void PRMDisplay::placeVertex(){
 		std::string classename=vertexIdPropertyMap[*i].substr(0,vertexIdPropertyMap[*i].find("."));
 		// couleur
 		makeVertexColor(classename);
-		board.drawText(positionMap[*i][0]+.1,positionMap[*i][1]+0.4, vertexIdPropertyMap[*i] );
+		board.drawText(positionMap[*i][0]+.1,positionMap[*i][1]+0.4, vertexIdPropertyMap[*i].substr(vertexIdPropertyMap[*i].find(".")+1, vertexIdPropertyMap[*i].length()) );
     }
 	placeClasse();
 
@@ -150,7 +150,7 @@ void PRMDisplay::placeClasse(){
 			}
 		board.drawRectangle(it->x-delta,it->y-delta,it->len+delta,it->hei+delta);
 		board.drawRectangle(it->x-delta,it->y-delta-1,it->len+delta,1);
-		board.drawText(positionMap[*i][0]+.1,positionMap[*i][1]+0.4, vertexIdPropertyMap[*i].substr(vertexIdPropertyMap[*i].find(".")+1, vertexIdPropertyMap[*i].length()) );
+		board.drawText(it->x-delta+.1,it->y-delta-0.2, it->classeName );
 		it->y+=-1; it->hei+=1;
 	}
 }
