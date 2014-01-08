@@ -29,6 +29,7 @@ struct VertexProperties
 {
     std::string index;//Classes.Attribut
     Points point;
+	float length; 
 };
 
 struct EdgeProperty
@@ -52,6 +53,7 @@ typedef boost::adjacency_list<boost::vecS,
 
 typedef boost::property_map<Graph, std::string VertexProperties::*>::type VertexIndexPropertyMap;
 typedef boost::property_map<Graph, Points VertexProperties::*>::type PositionMap;
+typedef boost::property_map<Graph, float VertexProperties::*>::type LengthMap;
 typedef boost::property_map<Graph, double EdgeProperty::*>::type WeightPropertyMap;
 
 typedef boost::graph_traits<Graph>::vertex_descriptor VertexDescriptor;
@@ -81,6 +83,7 @@ namespace prm{
 		PositionMap  positionMap;
 		Board board;
 		VertexIndexPropertyMap vertexIdPropertyMap;
+		LengthMap lengthmap;
 		std::vector<ColorClass> listColor;
 		std::vector<RectClass> listRect;
 		float delta; // espace entre les attributs et le rectangle de la classe

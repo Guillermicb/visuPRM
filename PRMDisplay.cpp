@@ -10,9 +10,10 @@ using namespace prm;
 
 PRMDisplay::PRMDisplay(const boost::shared_ptr<prm::RBN> rbn, const Graph& graph):rbn(rbn), graph(graph){
 	board.clear( Color(255,255,255) );
-	board.setUnit(1, Board::UCentimeter);
+	board.setUnit(8, Board::UPoint);
+	board.setFontSize(10);
 	board.setPenColorRGBi( 255, 0, 0);
-	board.setLineWidth( 1 );
+	board.setLineWidth(0.5);
 	srand (time(NULL));
 	delta=0.01;
 	
@@ -48,8 +49,11 @@ void PRMDisplay::placeVertex(){
 		std::string classename=vertexIdPropertyMap[*i].substr(0,vertexIdPropertyMap[*i].find("."));
 		// couleur
 		makeVertexColor(classename);
-		board.drawText(positionMap[*i][0]+.1,positionMap[*i][1]+0.4, vertexIdPropertyMap[*i].substr(vertexIdPropertyMap[*i].find(".")+1, vertexIdPropertyMap[*i].length()) );
-    }
+		lengthmap[*i]=vertexIdPropertyMap[*i].length()/2.7;
+		if (vertexIdPropertyMap[*i].find(".")!=std::string::npos) {
+		board.drawText(positionMap[*i][0]+.3,positionMap[*i][1]+1, vertexIdPropertyMap[*i].substr(vertexIdPropertyMap[*i].find(".")+1, vertexIdPropertyMap[*i].length()) );
+		}
+	}
 	placeClasse();
 
 }
@@ -96,8 +100,9 @@ void PRMDisplay::placeClasse(){
 			c.classeName=classename;
 			c.x=positionMap[*i][0];
 			c.y=positionMap[*i][1];
-			c.len=3;
-			c.hei=.5;
+			c.len=lengthmap[*i];
+			c.hei=1.5;
+			
 			listRect.push_back(c);
 			
 		}else{		
@@ -105,25 +110,25 @@ void PRMDisplay::placeClasse(){
 				if (it->classeName.compare(classename)==0){
 					trouve=true;
 					// je regle la longueur du rectangle
-					if ((it->x<=positionMap[*i][0]) && ((it->x)+(it->len)>=(positionMap[*i][0]+3))) {
+					if ((it->x<=positionMap[*i][0]) && ((it->x)+(it->len)>=(positionMap[*i][0]+lengthmap[*i]))) {
 
 					}else if (it->x>positionMap[*i][0]){
 						it->len+=std::abs(it->x-positionMap[*i][0]);
-					}else if ((it->x)+(it->len)<(positionMap[*i][0]+3)){
-						it->len+=std::abs(positionMap[*i][0]+3-(it->x+it->len));
+					}else if ((it->x)+(it->len)<(positionMap[*i][0]+lengthmap[*i])){
+						it->len+=std::abs(positionMap[*i][0]+lengthmap[*i]-(it->x+it->len));
 					}
 					// je regle la hauteur du rectangle
-					if ((it->y<=positionMap[*i][1]) && ((it->y)+(it->hei)>=(positionMap[*i][1]+.5))) {
+					if ((it->y<=positionMap[*i][1]) && ((it->y)+(it->hei)>=(positionMap[*i][1]+1.5))) {
 
 					}else if (it->y>positionMap[*i][1]){
 						it->hei+=std::abs(it->y-positionMap[*i][1]);
-					}else if ((it->y)+(it->hei)<(positionMap[*i][1]+.5)){
-						it->hei+=std::abs(positionMap[*i][1]+.5-(it->y+it->hei));
+					}else if ((it->y)+(it->hei)<(positionMap[*i][1]+1.5)){
+						it->hei+=std::abs(positionMap[*i][1]+1.5-(it->y+it->hei));
 					}
 					//je regle le point en haut à gauche du rectangle
 					if (it->x>positionMap[*i][0]) { it->x=positionMap[*i][0];}
 					if (it->y>positionMap[*i][1]) { it->y=positionMap[*i][1];}
-								
+					
 				 break;
 				}
 			}
@@ -134,8 +139,9 @@ void PRMDisplay::placeClasse(){
 				c.classeName=classename;
 				c.x=positionMap[*i][0];
 				c.y=positionMap[*i][1];
-				c.len=3;
-				c.hei=.5;
+				c.len=lengthmap[*i];
+				c.hei=1.5;
+				
 				listRect.push_back(c);
 			}
 		}
@@ -149,9 +155,9 @@ void PRMDisplay::placeClasse(){
 				}
 			}
 		board.drawRectangle(it->x-delta,it->y-delta,it->len+delta,it->hei+delta);
-		board.drawRectangle(it->x-delta,it->y-delta-1,it->len+delta,1);
+		board.drawRectangle(it->x-delta,it->y-delta-1.5,it->len+delta,1.5);
 		board.drawText(it->x-delta+.1,it->y-delta-0.2, it->classeName );
-		it->y+=-1; it->hei+=1;
+		it->y+=-1.5; it->hei+=1.5;
 	}
 }
 
@@ -338,7 +344,7 @@ void PRMDisplay::adjustDisplayAfterKamada(const double length){
 	boost::graph_traits<Graph>::vertex_iterator i, end;
 	Topology topology;
 	Points min_point = positionMap[*vertices(graph).first], max_point = min_point;
-	const int margin = 1;
+	const int margin = 2;
 
 	for (boost::tie(i, end) = boost::vertices(graph); i != end; ++i) {
 		min_point = topology.pointwise_min(min_point, positionMap[*i]);
@@ -349,6 +355,10 @@ void PRMDisplay::adjustDisplayAfterKamada(const double length){
 		positionMap[*i][0] += margin - min_point[0];
 		positionMap[*i][1] += margin - min_point[1];
 	}
+	/*for (boost::tie(i, end) = boost::vertices(graph); i != end; ++i) {
+		positionMap[*i][0] = positionMap[*i][0]/8;
+		positionMap[*i][1] = positionMap[*i][1]/8;
+	}*/
  
 
 }
@@ -395,7 +405,7 @@ void PRMDisplay::addVertex(const std::string& verticeName, std::map<std::string,
 	VertexDescriptor vd;
 	vertexIdPropertyMap = boost::get(&VertexProperties::index, graph);
 	positionMap = boost::get(&VertexProperties::point, graph);
-
+	lengthmap = boost::get(&VertexProperties::length, graph);
 	vd = boost::add_vertex(graph);
 	vertexIdPropertyMap[vd] = verticeName;
 	positionMap[vd][0]=1;
