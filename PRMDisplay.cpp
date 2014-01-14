@@ -52,11 +52,11 @@ void PRMDisplay::placeVertex(){
 		makeVertexColor(classename);
 		lengthmap[*i]=attribute.length()/1.35;
 		if (vertexIdPropertyMap[*i].find(".")!=std::string::npos) {
-			if (checkFkPkAttribute(classename, attribute)){
+			//if (checkFkPkAttribute(classename, attribute)){
 					board.drawText(positionMap[*i][0]+.5,positionMap[*i][1]+1, vertexIdPropertyMap[*i].substr(vertexIdPropertyMap[*i].find(".")+1, vertexIdPropertyMap[*i].length()) );
 					board.drawEllipse(positionMap[*i][0]+lengthmap[*i]/2, positionMap[*i][1]+0.75, lengthmap[*i]/2	, 1 );
 					//board.drawRectangle(positionMap[*i][0],positionMap[*i][1],lengthmap[*i],1.5 );
-			}
+			//}
 		}
 	}
 	placeClasse();
@@ -110,7 +110,7 @@ void PRMDisplay::placeClasse(){
 		std::string classename=vertexIdPropertyMap[*i].substr(0,vertexIdPropertyMap[*i].find("."));
 		std::string attribute=vertexIdPropertyMap[*i].substr(vertexIdPropertyMap[*i].find(".")+1, vertexIdPropertyMap[*i].length());
 		if (vertexIdPropertyMap[*i].find(".")!=std::string::npos) {
-		if (checkFkPkAttribute(classename, attribute)){
+		
 			bool trouve=false;
 			if (listRect.empty()){
 				RectClass c;
@@ -162,7 +162,7 @@ void PRMDisplay::placeClasse(){
 					listRect.push_back(c);
 				}
 			}
-		}
+		
 		}
 	}
 	// je dessine les rectangles de classe avec la bonne couleur de pinceau
@@ -380,7 +380,7 @@ void PRMDisplay::adjustDisplayAfterKamada(const double length){
 	boost::graph_traits<Graph>::vertex_iterator i, end;
 	Topology topology;
 	Points min_point = positionMap[*vertices(graph).first], max_point = min_point;
-	const int margin = 2;
+	const int margin = 5;
 
 	for (boost::tie(i, end) = boost::vertices(graph); i != end; ++i) {
 		min_point = topology.pointwise_min(min_point, positionMap[*i]);
@@ -511,9 +511,11 @@ void PRMDisplay::RBNToGraph_ArtificialClassVertex(const double attributeWeight, 
 			verticeName = *classsNameIterator;
 			verticeName.append(".");
 			verticeName.append(*attributNameIterator);
-			addVertex(verticeName, verticeContainer);
 			
-			boost::add_edge(verticeContainer[*classsNameIterator], verticeContainer[verticeName], EdgeProperty(attributeWeight), graph);
+			if (checkFkPkAttribute(*classsNameIterator, *attributNameIterator)){
+				addVertex(verticeName, verticeContainer);
+				boost::add_edge(verticeContainer[*classsNameIterator], verticeContainer[verticeName], EdgeProperty(attributeWeight), graph);
+			}
 		}
 	}
 	addForeignKeyEdges_artificialClassVertex(verticeContainer, FKWeight);
