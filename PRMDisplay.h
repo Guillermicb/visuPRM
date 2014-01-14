@@ -93,6 +93,8 @@ namespace prm{
 		void addForeignKeyEdges_multiConnectedAttributs(std::map<std::string, VertexDescriptor>&, const double edgeWweight);
 		void addForeignKeyEdges_artificialClassVertex(std::map<std::string, VertexDescriptor>&, const double edgeWweight);
 		void addProbabilistLink(std::map<std::string, VertexDescriptor>&, const double edgeWweight);
+		bool checkFkPkAttribute(const std::string&,const std::string&);
+
 	public:
 		
 		/*!

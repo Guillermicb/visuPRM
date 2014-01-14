@@ -15,7 +15,7 @@ PRMDisplay::PRMDisplay(const boost::shared_ptr<prm::RBN> rbn, const Graph& graph
 	board.setPenColorRGBi( 255, 0, 0);
 	board.setLineWidth(0.5);
 	srand (time(NULL));
-	delta=0.01;
+	delta=1.0;
 	
 }
 PRMDisplay::PRMDisplay(const boost::shared_ptr<prm::RBN> rbn, const PositionMap& postionMap, const VertexIndexPropertyMap& vertexNamemap, const Graph& graph):rbn(rbn), positionMap(postionMap), vertexIdPropertyMap(vertexNamemap), graph(graph){
@@ -47,15 +47,29 @@ void PRMDisplay::placeVertex(){
     for (boost::tie(i, end) = boost::vertices(graph); i != end; ++i) {
         std::cout << "ID: (" << vertexIdPropertyMap[*i] << ") x: " << positionMap[*i][0] << " y: " << positionMap[*i][1] << "\n";
 		std::string classename=vertexIdPropertyMap[*i].substr(0,vertexIdPropertyMap[*i].find("."));
+		std::string attribute=vertexIdPropertyMap[*i].substr(vertexIdPropertyMap[*i].find(".")+1, vertexIdPropertyMap[*i].length());
 		// couleur
 		makeVertexColor(classename);
-		lengthmap[*i]=vertexIdPropertyMap[*i].length()/2.7;
+		lengthmap[*i]=attribute.length()/1.35;
 		if (vertexIdPropertyMap[*i].find(".")!=std::string::npos) {
-		board.drawText(positionMap[*i][0]+.3,positionMap[*i][1]+1, vertexIdPropertyMap[*i].substr(vertexIdPropertyMap[*i].find(".")+1, vertexIdPropertyMap[*i].length()) );
+			if (checkFkPkAttribute(classename, attribute)){
+					board.drawText(positionMap[*i][0]+.5,positionMap[*i][1]+1, vertexIdPropertyMap[*i].substr(vertexIdPropertyMap[*i].find(".")+1, vertexIdPropertyMap[*i].length()) );
+					board.drawEllipse(positionMap[*i][0]+lengthmap[*i]/2, positionMap[*i][1]+0.75, lengthmap[*i]/2	, 1 );
+					//board.drawRectangle(positionMap[*i][0],positionMap[*i][1],lengthmap[*i],1.5 );
+			}
 		}
 	}
 	placeClasse();
 
+}
+
+bool PRMDisplay::checkFkPkAttribute(const std::string& classename,const std::string& attribute){
+	if (!rbn->getSchema().isFKAttribute(classename, attribute)){
+				if (!rbn->getSchema().getClass(classename).isPK(attribute)) {
+					return true; 
+				}
+	} 
+	return false;
 }
 
 void PRMDisplay::makeVertexColor(const std::string& classename){
@@ -94,56 +108,61 @@ void PRMDisplay::placeClasse(){
 	boost::graph_traits<Graph>::vertex_iterator i, end;
     for (boost::tie(i, end) = boost::vertices(graph); i != end; ++i) {
 		std::string classename=vertexIdPropertyMap[*i].substr(0,vertexIdPropertyMap[*i].find("."));
-		bool trouve=false;
-		if (listRect.empty()){
-			RectClass c;
-			c.classeName=classename;
-			c.x=positionMap[*i][0];
-			c.y=positionMap[*i][1];
-			c.len=lengthmap[*i];
-			c.hei=1.5;
-			
-			listRect.push_back(c);
-			
-		}else{		
-			for (std::vector<RectClass>::iterator it = listRect.begin();it != listRect.end(); ++it){
-				if (it->classeName.compare(classename)==0){
-					trouve=true;
-					// je regle la longueur du rectangle
-					if ((it->x<=positionMap[*i][0]) && ((it->x)+(it->len)>=(positionMap[*i][0]+lengthmap[*i]))) {
-
-					}else if (it->x>positionMap[*i][0]){
-						it->len+=std::abs(it->x-positionMap[*i][0]);
-					}else if ((it->x)+(it->len)<(positionMap[*i][0]+lengthmap[*i])){
-						it->len+=std::abs(positionMap[*i][0]+lengthmap[*i]-(it->x+it->len));
-					}
-					// je regle la hauteur du rectangle
-					if ((it->y<=positionMap[*i][1]) && ((it->y)+(it->hei)>=(positionMap[*i][1]+1.5))) {
-
-					}else if (it->y>positionMap[*i][1]){
-						it->hei+=std::abs(it->y-positionMap[*i][1]);
-					}else if ((it->y)+(it->hei)<(positionMap[*i][1]+1.5)){
-						it->hei+=std::abs(positionMap[*i][1]+1.5-(it->y+it->hei));
-					}
-					//je regle le point en haut à gauche du rectangle
-					if (it->x>positionMap[*i][0]) { it->x=positionMap[*i][0];}
-					if (it->y>positionMap[*i][1]) { it->y=positionMap[*i][1];}
-					
-				 break;
-				}
-			}
-			
-			if(!trouve){
-				std::cout<<"Classe: "<<classename<<std::endl;
+		std::string attribute=vertexIdPropertyMap[*i].substr(vertexIdPropertyMap[*i].find(".")+1, vertexIdPropertyMap[*i].length());
+		if (vertexIdPropertyMap[*i].find(".")!=std::string::npos) {
+		if (checkFkPkAttribute(classename, attribute)){
+			bool trouve=false;
+			if (listRect.empty()){
 				RectClass c;
 				c.classeName=classename;
 				c.x=positionMap[*i][0];
 				c.y=positionMap[*i][1];
 				c.len=lengthmap[*i];
 				c.hei=1.5;
-				
+			
 				listRect.push_back(c);
+			
+			}else{		
+				for (std::vector<RectClass>::iterator it = listRect.begin();it != listRect.end(); ++it){
+					if (it->classeName.compare(classename)==0){
+						trouve=true;
+						// je regle la longueur du rectangle
+						if ((it->x<=positionMap[*i][0]) && ((it->x)+(it->len)>=(positionMap[*i][0]+lengthmap[*i]))) {
+
+						}else if (it->x>positionMap[*i][0]){
+							it->len+=std::abs(it->x-positionMap[*i][0]);
+						}else if ((it->x)+(it->len)<(positionMap[*i][0]+lengthmap[*i])){
+							it->len+=std::abs(positionMap[*i][0]+lengthmap[*i]-(it->x+it->len));
+						}
+						// je regle la hauteur du rectangle
+						if ((it->y<=positionMap[*i][1]) && ((it->y)+(it->hei)>=(positionMap[*i][1]+1.5))) {
+
+						}else if (it->y>positionMap[*i][1]){
+							it->hei+=std::abs(it->y-positionMap[*i][1]);
+						}else if ((it->y)+(it->hei)<(positionMap[*i][1]+1.5)){
+							it->hei+=std::abs(positionMap[*i][1]+1.5-(it->y+it->hei));
+						}
+						//je regle le point en haut à gauche du rectangle
+						if (it->x>positionMap[*i][0]) { it->x=positionMap[*i][0];}
+						if (it->y>positionMap[*i][1]) { it->y=positionMap[*i][1];}
+					
+					 break;
+					}
+				}
+			
+				if(!trouve){
+					std::cout<<"Classe: "<<classename<<std::endl;
+					RectClass c;
+					c.classeName=classename;
+					c.x=positionMap[*i][0];
+					c.y=positionMap[*i][1];
+					c.len=lengthmap[*i];
+					c.hei=1.5;
+				
+					listRect.push_back(c);
+				}
 			}
+		}
 		}
 	}
 	// je dessine les rectangles de classe avec la bonne couleur de pinceau
@@ -154,10 +173,11 @@ void PRMDisplay::placeClasse(){
 				 break;
 				}
 			}
-		board.drawRectangle(it->x-delta,it->y-delta,it->len+delta,it->hei+delta);
-		board.drawRectangle(it->x-delta,it->y-delta-1.5,it->len+delta,1.5);
-		board.drawText(it->x-delta+.1,it->y-delta-0.2, it->classeName );
-		it->y+=-1.5; it->hei+=1.5;
+		
+		board.drawRectangle(it->x-delta,it->y-delta-1.5,it->len+delta+delta,it->hei+delta+delta+1.5);	
+		
+		board.drawText(it->x-delta+.1,it->y-delta-0.2, it->classeName,10 );
+		it->y+=-1.5-delta; it->hei+=+delta+delta+1.5;it->x-=delta;it->len+=delta+delta;
 	}
 }
 
@@ -169,43 +189,59 @@ void PRMDisplay::placeRelationnalLink(){
 	// Fisrt: get all the link between PK and FK	
 	for(RefSlotsMultimap::iterator rb = refSlots.begin(); rb != refSlots.end(); ++rb){
 		std::string classPK=rb->second.second->getName().c_str();
-		std::string classFK=rb->first.c_str();;
-		classFK.append(".");
-		classFK.append(rb->second.first.getName());
-		result.insert(std::pair<std::string, std::string>(classFK, classPK));
-	}
-	// Second: display the links
-	boost::graph_traits<Graph>::vertex_iterator i, end;
-	for (std::map<std::string,std::string>::iterator it=result.begin(); it!=result.end(); ++it){
-		for (boost::tie(i, end) = boost::vertices(graph); i != end; ++i) {
-			if (vertexIdPropertyMap[*i].compare(it->first)==0) {
-				for (std::vector<RectClass>::iterator it1 = listRect.begin();it1 != listRect.end(); ++it1){
-					if (it->second.compare(it1->classeName)==0) {
-						float x1,x2,y1,y2;
-							x1=positionMap[*i][0];
-							y1=positionMap[*i][1];
-							x2=it1->x;
-							y2=it1->y;
-							// Comparer les position pour placer x et Y correctement pour l'attribut et pour la classe reférente
-							if (positionMap[*i][1]<it1->y){// le noeud 1 est plus haut que noeud 2
-								y1+=.5;
-							}else {
-								y2+=it1->hei;
-							}
-							if (positionMap[*i][0]<it1->x){// le noeud 1 est plus droite que noeud 2
-								x1+=3;
-							}else {
-								x2+=it1->len;
-							}
-						board.drawLine(x1,y1,x2,y2);
-						break;
-					}
-				}
-				break;
+		std::string classFK=rb->first.c_str();
+		float x1,x2,y1,y2;
+		 RectClass PK, FK;
+		for (std::vector<RectClass>::iterator it5 = listRect.begin();it5 != listRect.end(); ++it5){
+			
+			if (classPK.compare(it5->classeName)==0) {
+				x1=it5->x;
+				y1=it5->y;
+				PK.classeName=it5->classeName;
+				PK.x=it5->x;
+				PK.y=it5->y;
+				PK.hei=it5->hei;
+				PK.len=it5->len;
+			}
+			if (classFK.compare(it5->classeName)==0) {
+				x2=it5->x;
+				y2=it5->y;
+				FK.classeName=it5->classeName;
+				FK.x=it5->x;
+				FK.y=it5->y;
+				FK.hei=it5->hei;
+				FK.len=it5->len;
 			}
 		}
+		std::cout<<"("<<x1<<","<<y1<<")"<<"("<<x2<<","<<y2<<")"<<std::endl;
+		if ((y1>y2) && (x1<x2)) {  
+			y2+=FK.hei; x1+=PK.len;
+		}else if ((y1<y2) && (x1<x2)) { 
+			y1+=PK.hei; x1+=PK.len;
+		}else if ((y1<y2) && (x1>x2)) { 
+			y1+=PK.hei; x2+=FK.len;
+		}else if ((y1>y2) && (x1>x2)) { 
+			y2+=FK.hei; x2+=FK.len;
+		}
+		
+		/*if (y2<y1){// le noeud 1 est plus haut que noeud 2
+			y2=y2+5;
+			y1=PK->y;
+		}else {
+			y1=PK->y+PK->hei;
+			y2=FK->y;
+		}
+		if (x2<x1){// le noeud 1 est plus droite que noeud 2
+			x2+=FK->x+FK->len;
+			x1+=PK->x;
+		}else {
+			x1+=PK->x+PK->len;
+			x2+=FK->x;
+		}*/
+		board.drawLine(x1,y1,x2,y2);
+		
+		//result.insert(std::pair<std::string, std::string>(classFK, classPK));
 	}
-				
 }
 
 void PRMDisplay::placeProbabilistLink(){ 
