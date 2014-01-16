@@ -164,6 +164,7 @@ int main(int argc, char **argv) {
 	// Etape 2: algorithme de placement
 		std::cout << "Application Kamada\n";
 		prmdisplay->usedKamada(50.0);
+		std::cout << "score de croisement " << prmdisplay->getCrossingScore() << std::endl;
 	
 	// Etape 3: Création graphique
 		std::cout << "Coordinates\n";
@@ -177,7 +178,7 @@ int main(int argc, char **argv) {
 
 	// Etape 4: Affichage en image vectorielle
 		std::cout << "Save file\n";
-		prmdisplay->display("C:/Users/pierre/Desktop/testPred", mySvgFile);
+		prmdisplay->display("C:/Users/Arrizh/Desktop/testPred", mySvgFile);
 		
 		//delete prmdisplay;
 		indice += .5;

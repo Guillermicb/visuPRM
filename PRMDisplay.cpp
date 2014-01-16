@@ -642,7 +642,194 @@ void PRMDisplay::addForeignKeyEdges_artificialClassVertex(std::map<std::string, 
 		attrFrom.append(".");
 		attrFrom.append(refSlotIterator->second.first.getName());
 		
-		//boost::add_edge(verticeContainer[classFrom], verticeContainer[classTo], EdgeProperty(edgeWweight), graph);
-		boost::add_edge(verticeContainer[attrFrom], verticeContainer[classTo], EdgeProperty(edgeWweight), graph);
+		boost::add_edge(verticeContainer[classFrom], verticeContainer[classTo], EdgeProperty(edgeWweight), graph);
+		//boost::add_edge(verticeContainer[attrFrom], verticeContainer[classTo], EdgeProperty(edgeWweight), graph);
 	}
+}
+
+std::pair<Points, Points> PRMDisplay::getEdgeCoordinates(boost::graph_traits<Graph>::edge_iterator edgeIterator){
+	Points beginPoint, endPoint;
+	
+	beginPoint = positionMap[boost::source(*edgeIterator, graph)];
+	endPoint  = positionMap[boost::target(*edgeIterator, graph)];
+
+	return std::pair<Points, Points>(beginPoint, endPoint);
+}
+
+std::pair<double, double> PRMDisplay::get2DLinearEquation(Points point1, Points point2){
+	double a, b = 0 ;
+	try {
+		a = (point2[1] - point1[1]) / (point2[0] - point1[0]);
+		b = point1[1] - (a * point1[0]);
+	} catch (std::exception& e) {
+		std::cerr << e.what() << " in get2DLinearEquation function" << std::endl;
+	}
+
+	return std::pair<double, double>(a,b);
+}
+
+bool PRMDisplay::isBetween(double xcoordinate, double x1, double x2){
+	bool result = false;
+
+	if( x1 < x2 ){
+		if( (xcoordinate >= x1) && (xcoordinate <= x2) ){
+			result = true;
+		}
+	} else {
+		if( (xcoordinate <= x1) && (xcoordinate >= x2) ){
+			result = true;
+		}
+	}
+	return result;
+}
+
+Points& PRMDisplay::reversePointCoordinate(Points& p){
+	double temp = p[1];
+	p[1] = p[0];
+	p[0] = temp;
+	return p;
+}
+
+int PRMDisplay::getNbCrossing(){
+	int result = 0;
+	boost::graph_traits<Graph>::edge_iterator edgeIterator1, end, edgeIterator2;
+	Points beginPoint_edge1, endPoint_edge1, beginPoint_edge2, endPoint_edge2, tmp1, tmp2;
+	double a1, a2, b1, b2, xcommun;
+	VertexDescriptor v1,v2,v3,v4;
+
+	for(boost::tie(edgeIterator1, end) = boost::edges(graph); edgeIterator1 != boost::prior(end); edgeIterator1++){
+		boost::tie(beginPoint_edge1, endPoint_edge1) = getEdgeCoordinates(edgeIterator1); // arête à comparer avec le reste de la liste
+		
+		v1 = boost::source(*edgeIterator1, graph);
+		v2 = boost::target(*edgeIterator1, graph);
+
+		for (edgeIterator2 = boost::next(edgeIterator1) ; edgeIterator2 != end; edgeIterator2++) {
+			boost::tie(beginPoint_edge2, endPoint_edge2) = getEdgeCoordinates(edgeIterator2);
+			
+			v3 = boost::source(*edgeIterator2, graph);
+			v4 = boost::target(*edgeIterator2, graph);
+
+			if((v1 != v3) && (v1 != v4) && (v2 != v3) && (v2 != v4)){
+				//On veut connaitre les équations des 2 droites
+				//rechercher les coefficients directeur a1 et a2
+				if((beginPoint_edge1[0] != endPoint_edge1[0]) && (beginPoint_edge2[0] != endPoint_edge2[0])){ 
+					//std::cout << "toto1 " <<beginPoint_edge1[0]<<"_" << endPoint_edge1[0]<<"_"<< beginPoint_edge2[0]<<"_"<<endPoint_edge2[0] << std::endl;
+					boost::tie(a1, b1) = get2DLinearEquation(beginPoint_edge1, endPoint_edge1);
+					boost::tie(a2, b2) = get2DLinearEquation(beginPoint_edge2, endPoint_edge2);
+				} else { // droite verticale x1 = x2 il faut changer le repère
+					if((beginPoint_edge1[1] != endPoint_edge1[1]) && (beginPoint_edge2[1] != endPoint_edge2[1])){
+						boost::tie(a1, b1) = get2DLinearEquation(reversePointCoordinate(beginPoint_edge1), reversePointCoordinate(endPoint_edge1));
+						boost::tie(a2, b2) = get2DLinearEquation(reversePointCoordinate(beginPoint_edge2), reversePointCoordinate(endPoint_edge2));
+					} else { //perpendicularité horizontal/vertical,
+						a1 = a2 = 0.0;
+						if(beginPoint_edge1[0] == endPoint_edge1[0]) { //arête1 verticale
+							if(isBetween(beginPoint_edge1[0], beginPoint_edge2[0], endPoint_edge2[0]) &&
+								isBetween(beginPoint_edge2[1], beginPoint_edge1[1], endPoint_edge1[1])) {
+									result++;	
+							}
+						} else { //arête 2 verticale
+							if(isBetween(beginPoint_edge2[0], beginPoint_edge1[0], endPoint_edge1[0]) &&
+								isBetween(beginPoint_edge1[1], beginPoint_edge2[1], endPoint_edge2[1])) {
+									result++;
+
+							}
+						}
+					}
+				}
+			
+				//si a1 = a2 alors les segments ne se croisent pas.
+				if(a1 != a2) {
+					xcommun = (b2-b1)/(a1-a2);
+					if( isBetween(xcommun, beginPoint_edge1[0], endPoint_edge1[0]) && isBetween(xcommun, beginPoint_edge2[0], endPoint_edge2[0]) ){
+						result++;
+					}
+				}
+			}
+		}
+		
+	}
+
+	return result;
+}
+
+int PRMDisplay::getMaxCrossing() {
+	int call, cimpossible, m, n, degree;
+	n = boost::num_vertices(graph);
+	m = boost::num_edges(graph);
+	boost::graph_traits<Graph>::vertex_iterator iterator, end;
+	
+	call = m*(m-1)/2;
+	cimpossible = 0;
+	for(boost::tie(iterator, end) = vertices(graph) ; iterator != end ; iterator++ ){
+		degree = boost::in_degree(*iterator, graph);
+		cimpossible +=  (degree * (degree-1));
+	}
+	cimpossible = cimpossible / 2;
+	return call - cimpossible;
+
+}
+
+double PRMDisplay::getCrossingScore(){
+	int cmax = getMaxCrossing();
+	if(cmax > 0){
+		return 1. - (static_cast<double>(getNbCrossing()) / static_cast<double>(cmax));
+	} else {
+		return 1.;
+	}
+}
+
+void PRMDisplay::initGraph(){
+	
+	VertexDescriptor vd1, vd2, vd3, vd4, vd5, vd6, vd7, vd8;
+
+	vertexIdPropertyMap = boost::get(&VertexProperties::index, graph);
+	positionMap = boost::get(&VertexProperties::point, graph);
+	
+	vd1 = boost::add_vertex(graph);
+	vertexIdPropertyMap[vd1] = "0_0";
+	
+	positionMap[vd1][0]=0;
+	positionMap[vd1][1]=0;
+	
+
+	vd2 = boost::add_vertex(graph);
+	vertexIdPropertyMap[vd2] = "10_10";
+	positionMap[vd2][0]=10;
+	positionMap[vd2][1]=10;
+
+	vd3 = boost::add_vertex(graph);
+	vertexIdPropertyMap[vd3] = "0_10";
+	positionMap[vd3][0]=0;
+	positionMap[vd3][1]=10;
+
+	vd4 = boost::add_vertex(graph);
+	vertexIdPropertyMap[vd4] = "10_0";
+	positionMap[vd4][0]=10;
+	positionMap[vd4][1]=0;
+
+	vd5 = boost::add_vertex(graph);
+	vertexIdPropertyMap[vd5] = "1_1";
+	positionMap[vd5][0]=1;
+	positionMap[vd5][1]=1;
+
+	vd6 = boost::add_vertex(graph);
+	vertexIdPropertyMap[vd6] = "1_9";
+	positionMap[vd6][0]=1;
+	positionMap[vd6][1]=9;
+
+	vd7 = boost::add_vertex(graph);
+	vertexIdPropertyMap[vd7] = "2_8";
+	positionMap[vd7][0]=2;
+	positionMap[vd7][1]=8;
+
+	vd8 = boost::add_vertex(graph);
+	vertexIdPropertyMap[vd8] = "9_8";
+	positionMap[vd8][0]=9;
+	positionMap[vd8][1]=8;
+	
+
+	boost::add_edge(vd1, vd2, EdgeProperty(1), graph);
+	boost::add_edge(vd3, vd4, EdgeProperty(1), graph);
+	boost::add_edge(vd7, vd8, EdgeProperty(1), graph);
+	boost::add_edge(vd5, vd6, EdgeProperty(1), graph);
 }

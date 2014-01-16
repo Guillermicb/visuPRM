@@ -96,6 +96,21 @@ namespace prm{
 		void addProbabilistLink(std::map<std::string, VertexDescriptor>&, const double edgeWweight);
 		bool checkFkPkAttribute(const std::string&,const std::string&);
 		void drawRelationnalLink(int nbCoude, float x1,float y1,float x2,float y2 );
+		std::pair<double, double> get2DLinearEquation(Points, Points) throw();
+		Points& reversePointCoordinate(Points&);
+
+		/*!
+		 * \return TRUE if xcoordinate is between x1 and x2
+		 * \param xcoordinate the tested point
+		 * \param x1 and x2 : end of the interval
+		 */
+		bool isBetween(double xcoordinate, double x1, double x2);
+
+		/*!
+		 * \return the begin and the end coordinates point of the edge 
+		 * \param a pointer to the edge
+		 */
+		std::pair<Points, Points> getEdgeCoordinates(boost::graph_traits<Graph>::edge_iterator);
 		
 	public:
 		
@@ -127,6 +142,11 @@ namespace prm{
 		inline double  min(float a,float b){return a<b?a:b;}
 		double minDistance4point(float a,float b,float c,float d );
 		void drawClass();
+
+		int getNbCrossing();
+		int getMaxCrossing();
+		double getCrossingScore();
+		void initGraph();
 
 	};
 
