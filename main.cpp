@@ -1,4 +1,4 @@
-/**
+ï»¿/**
   * File : main.cpp
   * Description : Entry point for the test project. This file has been added here because there were multiple main functions 
   *               in the cpp files inside test folder and this was causing problem during building the project. 
@@ -150,34 +150,39 @@ int main(int argc, char **argv) {
 		*/
 
 	// Displaying
-	double indice = 1.;
+	double indice =3;
 	std::string mySvgFile, tmp = "";
-	for(int i=0;i<20;i++){
-//Etape 1: création du graphe de contrainte
+	//for(int i=0;i<7;i++){
+//Etape 1: crÃ©ation du graphe de contrainte
 		mySvgFile = "test";
-		tmp = boost::lexical_cast<std::string>(i);
+		//tmp = boost::lexical_cast<std::string>(i);
 		mySvgFile.append(tmp);
 		std::cout << "Graphe de contrainte\n";
 		prmdisplay=new prm::PRMDisplay(rbnTest,graph); 
-		prmdisplay->RBNToGraph_ArtificialClassVertex(1.,indice,indice);
+		prmdisplay->RBNToGraph_ArtificialClassVertex(1,indice,indice);
 
 	// Etape 2: algorithme de placement
 		std::cout << "Application Kamada\n";
 		prmdisplay->usedKamada(50.0);
 	
-	// Etape 3: Création graphique
+	// Etape 3: CrÃ©ation graphique
 		std::cout << "Coordinates\n";
 	
 		prmdisplay->placeVertex();
+		std::cout << "relation\n";
 		prmdisplay->placeRelationnalLink(); 
+		std::cout << "pro\n";
 		prmdisplay->placeProbabilistLink();
 
-	// Etape 4: Affichage en image vectorielle
-		prmdisplay->display("C:/Users/Arrizh/Desktop/testPred", mySvgFile);
-		delete prmdisplay;
-		indice += .5;
 
-	}
+	// Etape 4: Affichage en image vectorielle
+		std::cout << "Save file\n";
+		prmdisplay->display("C:/Users/pierre/Desktop/testPred", mySvgFile);
+		
+		//delete prmdisplay;
+		indice += .5;
+		//prmdisplay->~PRMDisplay();
+	//}
 	
 
 	//(Anthony) First optional argument is now the google test ::testing::FLAGS_gtest_filter

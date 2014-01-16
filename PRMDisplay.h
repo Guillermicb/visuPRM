@@ -40,7 +40,7 @@ struct EdgeProperty
 };
 
 
-struct Extremite_Segment
+struct Dot
 {
     int x;
     int y;
@@ -72,6 +72,7 @@ typedef struct RectClass {
 	float len;
 	float hei;
 	std::string classeName;
+	#include <limits>;
 };
 
 namespace prm{
@@ -94,7 +95,8 @@ namespace prm{
 		void addForeignKeyEdges_artificialClassVertex(std::map<std::string, VertexDescriptor>&, const double edgeWweight);
 		void addProbabilistLink(std::map<std::string, VertexDescriptor>&, const double edgeWweight);
 		bool checkFkPkAttribute(const std::string&,const std::string&);
-
+		void drawRelationnalLink(int nbCoude, float x1,float y1,float x2,float y2 );
+		
 	public:
 		
 		/*!
@@ -121,7 +123,10 @@ namespace prm{
 		void RBNToGraph_AllAttributsConnected(const double attributeWeight, const double FKWeight, const double probWeight);
 		void RBNToGraph_ArtificialClassVertex(const double attributeWeight, const double FKWeight, const double probWeight);
 		void usedKamada(const double sideLenght);
-		
+		double distanceBetweenDot(float x1,float y1,float x2,float y2);
+		inline double  min(float a,float b){return a<b?a:b;}
+		double minDistance4point(float a,float b,float c,float d );
+		void drawClass();
 
 	};
 

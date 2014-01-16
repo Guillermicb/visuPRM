@@ -52,11 +52,11 @@ void PRMDisplay::placeVertex(){
 		makeVertexColor(classename);
 		lengthmap[*i]=attribute.length()/1.35;
 		if (vertexIdPropertyMap[*i].find(".")!=std::string::npos) {
-			if (checkFkPkAttribute(classename, attribute)){
+			//if (checkFkPkAttribute(classename, attribute)){
 					board.drawText(positionMap[*i][0]+.5,positionMap[*i][1]+1, vertexIdPropertyMap[*i].substr(vertexIdPropertyMap[*i].find(".")+1, vertexIdPropertyMap[*i].length()) );
 					board.drawEllipse(positionMap[*i][0]+lengthmap[*i]/2, positionMap[*i][1]+0.75, lengthmap[*i]/2	, 1 );
 					//board.drawRectangle(positionMap[*i][0],positionMap[*i][1],lengthmap[*i],1.5 );
-			}
+			//}
 		}
 	}
 	placeClasse();
@@ -110,7 +110,7 @@ void PRMDisplay::placeClasse(){
 		std::string classename=vertexIdPropertyMap[*i].substr(0,vertexIdPropertyMap[*i].find("."));
 		std::string attribute=vertexIdPropertyMap[*i].substr(vertexIdPropertyMap[*i].find(".")+1, vertexIdPropertyMap[*i].length());
 		if (vertexIdPropertyMap[*i].find(".")!=std::string::npos) {
-		if (checkFkPkAttribute(classename, attribute)){
+		
 			bool trouve=false;
 			if (listRect.empty()){
 				RectClass c;
@@ -162,9 +162,13 @@ void PRMDisplay::placeClasse(){
 					listRect.push_back(c);
 				}
 			}
-		}
+		
 		}
 	}
+	drawClass();
+}
+
+void PRMDisplay::drawClass(){
 	// je dessine les rectangles de classe avec la bonne couleur de pinceau
 	for (std::vector<RectClass>::iterator it = listRect.begin();it != listRect.end(); ++it){
 		for (std::vector<ColorClass>::iterator it1 = listColor.begin();it1 != listColor.end(); ++it1){
@@ -214,34 +218,68 @@ void PRMDisplay::placeRelationnalLink(){
 			}
 		}
 		std::cout<<"("<<x1<<","<<y1<<")"<<"("<<x2<<","<<y2<<")"<<std::endl;
-		if ((y1>y2) && (x1<x2)) {  
-			y2+=FK.hei; x1+=PK.len;
-		}else if ((y1<y2) && (x1<x2)) { 
-			y1+=PK.hei; x1+=PK.len;
-		}else if ((y1<y2) && (x1>x2)) { 
-			y1+=PK.hei; x2+=FK.len;
-		}else if ((y1>y2) && (x1>x2)) { 
-			y2+=FK.hei; x2+=FK.len;
-		}
 		
-		/*if (y2<y1){// le noeud 1 est plus haut que noeud 2
-			y2=y2+5;
-			y1=PK->y;
-		}else {
-			y1=PK->y+PK->hei;
-			y2=FK->y;
+		if (x1+PK.len<x2+FK.len/2) {// le rectangle 2 est a droite du rectangle 1  
+			if ((y1>y2) && (y1<y2+FK.hei)){
+				x1+=PK.len; y1+=PK.hei/2;y2+=FK.hei/2;
+				drawRelationnalLink(2,x1,y1,x2,y2 );
+			}else if ((y1<y2)) {// le rectangle 2 est en dessous du rectangle 1 
+				x1+=PK.len; y1+=PK.hei/2; x2+=FK.len/2;
+				drawRelationnalLink(1,x1,y1,x2,y2 );
+			}else{// le rectangle 2 est au dessus du rectangle 1 
+				x1+=PK.len; y1+=PK.hei/2; x2+=FK.len/2;y2+=FK.hei;
+				drawRelationnalLink(1,x1,y1,x2,y2 );
+			}
+			
+		}else{// le rectangle 1 est a droite du rectangle 2  
+			if ((y1>y2) && (y1<y2+FK.hei)){
+				 y1+=PK.hei/2;y2+=FK.hei/2;x2+=FK.len;
+				 drawRelationnalLink(2,x1,y1,x2,y2 );
+			}else if ((y1<y2)) {// le rectangle 2 est en dessous du rectangle 1 
+				 y1+=PK.hei/2; x2+=FK.len/2;
+				 drawRelationnalLink(1,x1,y1,x2,y2 );
+			}else{// le rectangle 2 est au dessus du rectangle 1
+				y1+=PK.hei/2; x2+=FK.len/2;y2+=FK.hei;
+				drawRelationnalLink(1,x1,y1,x2,y2 );
+			}
 		}
-		if (x2<x1){// le noeud 1 est plus droite que noeud 2
-			x2+=FK->x+FK->len;
-			x1+=PK->x;
-		}else {
-			x1+=PK->x+PK->len;
-			x2+=FK->x;
-		}*/
-		board.drawLine(x1,y1,x2,y2);
+
+		
+		
 		
 		//result.insert(std::pair<std::string, std::string>(classFK, classPK));
 	}
+}
+
+void PRMDisplay::drawRelationnalLink(int nbCoude, float x1,float y1,float x2,float y2 ){
+	float tmpX, tempY;
+	switch (nbCoude){
+	case 1: 
+		board.drawLine(x1,y1,x2,y1);
+		board.drawLine(x2,y1,x2,y2);
+		break; 
+	case 2: 
+		tmpX=std::abs(x1-x2)/2;
+		if (x1<x2){tmpX+=x1;} else {tmpX+=x2;}
+		board.drawLine(x1,y1,tmpX,y1);
+		board.drawLine(tmpX,y1,tmpX,y2);
+		board.drawLine(tmpX,y2,x2,y2);
+
+		break;
+	}
+}
+
+double PRMDisplay::distanceBetweenDot(float x1,float y1,float x2,float y2 ){
+	return std::sqrt((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2));
+}
+
+
+double PRMDisplay::minDistance4point(float a,float b,float c,float d ){
+	float mini; 
+	mini=min(a,b);
+	mini=min(mini,c);
+	mini=min(mini,d);
+	return mini;
 }
 
 void PRMDisplay::placeProbabilistLink(){ 
@@ -257,21 +295,92 @@ void PRMDisplay::placeProbabilistLink(){
 					boost::graph_traits<Graph>::vertex_iterator i1, end1;
 					for (boost::tie(i1, end1) = boost::vertices(graph); i1 != end1; ++i1) {
 						if (vertexIdPropertyMap[*i1].compare(dynamic_pointer_cast<IRBNSimpleVariable>(seq[j])->getBaseName())==0){
-							float x1,x2,y1,y2;
+							float x1,x2,y1,y2, dist1, dist2, dist3, dist4;
 							x1=positionMap[*i1][0];
 							y1=positionMap[*i1][1];
 							x2=positionMap[*i][0];
 							y2=positionMap[*i][1];
 							// Comparer les position pour placer x et Y correctement
-							if (positionMap[*i1][1]<positionMap[*i][1]){// le noeud 1 est plus haut que noeud 2
-								y1+=.5;
-							}else {
-								y2+=.5;
-							}
-							if (positionMap[*i1][0]<positionMap[*i][0]){// le noeud 1 est plus droite que noeud 2
-								x1+=3;
-							}else {
-								x2+=3;
+							if ((x1>x2)&&(y1<y2)){
+								dist1=distanceBetweenDot(x1,y1+0.75,x2+lengthmap[*i]/2,y2);
+								dist2=distanceBetweenDot(x1,y1+0.75,x2+lengthmap[*i],y2+0.75);
+								dist3=distanceBetweenDot(x1+lengthmap[*i1]/2,y1+1.5,x2+lengthmap[*i]/2,y2);
+								dist4=distanceBetweenDot(x1+lengthmap[*i1]/2,y1+1.5,x2+lengthmap[*i],y2+0.75);
+								float distmin=minDistance4point(dist1,dist2,dist3,dist4);
+								if (distmin==dist1){
+									y1+=0.75;
+									x2+=lengthmap[*i]/2;
+									y2-=0.2;
+								}else if (distmin==dist2){
+									y1+=0.75;
+									x2+=lengthmap[*i];
+									y2+=0.75;
+								}else if (distmin==dist3){
+									x1+=lengthmap[*i1]/2;
+									y1+=1.7;
+									x2+=lengthmap[*i]/2;
+									y2-=0.2;
+								}else if (distmin==dist4){
+									x1+=lengthmap[*i1]/2;y1+=1.7;x2=+lengthmap[*i];y2+=0.75;
+								}
+
+							}else if ((x1>x2)&&(y1>y2)){
+								dist1=distanceBetweenDot(x1,y1+0.75,x2+lengthmap[*i]/2,y2+1.5);
+								dist2=distanceBetweenDot(x1,y1+0.75,x2+lengthmap[*i],y2+0.75);
+								dist3=distanceBetweenDot(x1+lengthmap[*i1]/2,y1+1.5,x2+lengthmap[*i]/2,y2+1.5);
+								dist4=distanceBetweenDot(x1+lengthmap[*i1]/2,y1+1.5,x2+lengthmap[*i],y2+0.75);
+								float distmin=minDistance4point(dist1,dist2,dist3,dist4);
+								if (distmin==dist1){
+									y1+=0.75;
+									y2+=1.7;
+									x2+=lengthmap[*i]/2;
+								}else if (distmin==dist2){
+									y1+=0.75;
+									x2+=lengthmap[*i];
+									y2+=0.75;
+								}else if (distmin==dist3){
+									x1+=lengthmap[*i1]/2;
+									y1+=1.7;
+									y2+=1.7;
+									x2+=lengthmap[*i]/2;
+								}else if (distmin==dist4){
+									x1+=lengthmap[*i1]/2;
+									y1+=1.7;
+									x2=+lengthmap[*i];
+									y2+=0.75;
+								}
+							}else if ((x1<x2)&&(y1>y2)){
+								dist1=distanceBetweenDot(x1+lengthmap[*i1]/2,y1,x2,y2+0.75);
+								dist2=distanceBetweenDot(x1+lengthmap[*i1]/2,y1,x2+lengthmap[*i]/2,y2+1.5);
+								dist3=distanceBetweenDot(x1+lengthmap[*i1],y1+0.75,x2,y2+0.75);
+								dist4=distanceBetweenDot(x1+lengthmap[*i1],y1+0.75,x2+lengthmap[*i]/2,y2+1.5);
+								float distmin=minDistance4point(dist1,dist2,dist3,dist4);
+								if (distmin==dist1){
+									x1+=lengthmap[*i1]/2;y2+=0.75;y1-=0.2;
+								}else if (distmin==dist2){
+									x1+=lengthmap[*i1]/2;x2+=lengthmap[*i]/2;y2+=1.7;y1-=0.2;
+								}else if (distmin==dist3){
+									x1+=lengthmap[*i1];y1+=0.75;y2+=0.75;
+								}else if (distmin==dist4){
+									x1+=lengthmap[*i1];y1=+0.75;x2+=lengthmap[*i]/2;y2+=1.7;
+								}
+							}else if ((x1<x2)&&(y1<y2)){
+								dist1=distanceBetweenDot(x1+lengthmap[*i1]/2,y1+0.75,x2+lengthmap[*i]/2,y2);
+								dist2=distanceBetweenDot(x1+lengthmap[*i1]/2,y1+0.75,x2,y2+0.75);
+								dist3=distanceBetweenDot(x1+lengthmap[*i1],y1+0.75,x2+lengthmap[*i]/2,y2);
+								dist4=distanceBetweenDot(x1+lengthmap[*i1],y1+0.75,x2,y2+0.75);
+								float distmin=minDistance4point(dist1,dist2,dist3,dist4);
+								if (distmin==dist1){
+									x1+=lengthmap[*i1]/2;y1+=0.75;x2+=lengthmap[*i]/2;y2-=0.2;
+								}else if (distmin==dist2){
+									x1+=lengthmap[*i1]/2;y1+=0.75;y2+=0.75;
+								}else if (distmin==dist3){
+									x1+=lengthmap[*i1];
+									y1+=0.75;x2+=lengthmap[*i]/2;
+									y2-=0.2;
+								}else if (distmin==dist4){
+									x1+=lengthmap[*i1];y1+=0.75;y2+=0.75;
+								}
 							}
 							board.drawArrow(x1,y1, x2,y2);
 							break;
@@ -380,7 +489,7 @@ void PRMDisplay::adjustDisplayAfterKamada(const double length){
 	boost::graph_traits<Graph>::vertex_iterator i, end;
 	Topology topology;
 	Points min_point = positionMap[*vertices(graph).first], max_point = min_point;
-	const int margin = 2;
+	const int margin = 5;
 
 	for (boost::tie(i, end) = boost::vertices(graph); i != end; ++i) {
 		min_point = topology.pointwise_min(min_point, positionMap[*i]);
@@ -511,9 +620,11 @@ void PRMDisplay::RBNToGraph_ArtificialClassVertex(const double attributeWeight, 
 			verticeName = *classsNameIterator;
 			verticeName.append(".");
 			verticeName.append(*attributNameIterator);
-			addVertex(verticeName, verticeContainer);
 			
-			boost::add_edge(verticeContainer[*classsNameIterator], verticeContainer[verticeName], EdgeProperty(attributeWeight), graph);
+			if (checkFkPkAttribute(*classsNameIterator, *attributNameIterator)){
+				addVertex(verticeName, verticeContainer);
+				boost::add_edge(verticeContainer[*classsNameIterator], verticeContainer[verticeName], EdgeProperty(attributeWeight), graph);
+			}
 		}
 	}
 	addForeignKeyEdges_artificialClassVertex(verticeContainer, FKWeight);
