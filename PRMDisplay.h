@@ -96,6 +96,7 @@ namespace prm{
 		void addProbabilistLink(std::map<std::string, VertexDescriptor>&, const double edgeWweight);
 		bool checkFkPkAttribute(const std::string&,const std::string&);
 		void drawRelationnalLink(int nbCoude, float x1,float y1,float x2,float y2 );
+		void drawProbabilistLink(const std::string aggregat, float x1,float y1,float x2,float y2 );
 		std::pair<double, double> get2DLinearEquation(Points, Points) throw();
 		Points& reversePointCoordinate(Points&);
 

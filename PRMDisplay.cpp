@@ -220,28 +220,37 @@ void PRMDisplay::placeRelationnalLink(){
 		std::cout<<"("<<x1<<","<<y1<<")"<<"("<<x2<<","<<y2<<")"<<std::endl;
 		
 		if (x1+PK.len<x2+FK.len/2) {// le rectangle 2 est a droite du rectangle 1  
-			if ((y1>y2) && (y1<y2+FK.hei)){
+			if ((y1>y2) && (y1<y2+FK.hei)|| ((y1>y2) && (y1+PK.hei<y2+FK.hei))){
 				x1+=PK.len; y1+=PK.hei/2;y2+=FK.hei/2;
 				drawRelationnalLink(2,x1,y1,x2,y2 );
 			}else if ((y1<y2)) {// le rectangle 2 est en dessous du rectangle 1 
-				x1+=PK.len; y1+=PK.hei/2; x2+=FK.len/2;
+				x1+=PK.len; y1+=2*PK.hei/3; x2+=FK.len/2;
 				drawRelationnalLink(1,x1,y1,x2,y2 );
 			}else{// le rectangle 2 est au dessus du rectangle 1 
-				x1+=PK.len; y1+=PK.hei/2; x2+=FK.len/2;y2+=FK.hei;
+				x1+=PK.len; y1+=PK.hei/3; x2+=FK.len/2;y2+=FK.hei;
 				drawRelationnalLink(1,x1,y1,x2,y2 );
 			}
 			
-		}else{// le rectangle 1 est a droite du rectangle 2  
-			if ((y1>y2) && (y1<y2+FK.hei)){
-				 y1+=PK.hei/2;y2+=FK.hei/2;x2+=FK.len;
+		}else if (x1>x2+FK.len/2){// le rectangle 1 est a droite du rectangle 2  
+			if ((y1>y2) && (y1<y2+FK.hei) || ((y1>y2) && (y1+PK.hei<y2+FK.hei))){
+				x1+=PK.len/2;y1+=PK.hei/2;y2+=FK.hei/2;x2+=FK.len;
 				 drawRelationnalLink(2,x1,y1,x2,y2 );
 			}else if ((y1<y2)) {// le rectangle 2 est en dessous du rectangle 1 
-				 y1+=PK.hei/2; x2+=FK.len/2;
+				 y1+=2*PK.hei/3; x2+=FK.len/2;
 				 drawRelationnalLink(1,x1,y1,x2,y2 );
 			}else{// le rectangle 2 est au dessus du rectangle 1
-				y1+=PK.hei/2; x2+=FK.len/2;y2+=FK.hei;
+				y1+=PK.hei/3; x2+=FK.len/2;y2+=FK.hei;
 				drawRelationnalLink(1,x1,y1,x2,y2 );
 			}
+		}else{
+			 if ((y1<y2)) {// le rectangle 2 est en dessous du rectangle 1 
+				 y1+=PK.hei;x2+=FK.len/2;x1+=PK.len/4;
+				 drawRelationnalLink(3,x1,y1,x2,y2 );
+			}else{// le rectangle 2 est au dessus du rectangle 1
+				x1+=PK.len/4; x2+=FK.len/2;y2+=FK.hei;
+				drawRelationnalLink(3,x1,y1,x2,y2 );
+			}
+
 		}
 
 		
@@ -252,7 +261,7 @@ void PRMDisplay::placeRelationnalLink(){
 }
 
 void PRMDisplay::drawRelationnalLink(int nbCoude, float x1,float y1,float x2,float y2 ){
-	float tmpX, tempY;
+	float tmpX, tmpY;
 	switch (nbCoude){
 	case 1: 
 		board.drawLine(x1,y1,x2,y1);
@@ -265,6 +274,14 @@ void PRMDisplay::drawRelationnalLink(int nbCoude, float x1,float y1,float x2,flo
 		board.drawLine(tmpX,y1,tmpX,y2);
 		board.drawLine(tmpX,y2,x2,y2);
 
+		break;
+
+	case 3:
+		tmpY=std::abs(y1-y2)/2;
+		if (y1<y2){tmpY+=y1;} else {tmpY+=y2;}
+		board.drawLine(x1,y1,x1,tmpY);
+		board.drawLine(x2,tmpY,x1,tmpY);
+		board.drawLine(x2,tmpY,x2,y2);
 		break;
 	}
 }
@@ -286,6 +303,7 @@ void PRMDisplay::placeProbabilistLink(){
 	board.setPenColorRGBi( 0, 0,255);
 	boost::graph_traits<Graph>::vertex_iterator i, end;
 	RBNVariablesSequence seq;
+	std::string aggregat;
 	 for (boost::tie(i, end) = boost::vertices(graph); i != end; i++) {
 		
 		if (rbn->existsNode(vertexIdPropertyMap[*i])){
@@ -295,6 +313,7 @@ void PRMDisplay::placeProbabilistLink(){
 					boost::graph_traits<Graph>::vertex_iterator i1, end1;
 					for (boost::tie(i1, end1) = boost::vertices(graph); i1 != end1; ++i1) {
 						if (vertexIdPropertyMap[*i1].compare(dynamic_pointer_cast<IRBNSimpleVariable>(seq[j])->getBaseName())==0){
+							aggregat=Aggregator::getAggregatorName(seq[j]->getAggregatorType());
 							float x1,x2,y1,y2, dist1, dist2, dist3, dist4;
 							x1=positionMap[*i1][0];
 							y1=positionMap[*i1][1];
@@ -321,7 +340,7 @@ void PRMDisplay::placeProbabilistLink(){
 									x2+=lengthmap[*i]/2;
 									y2-=0.2;
 								}else if (distmin==dist4){
-									x1+=lengthmap[*i1]/2;y1+=1.7;x2=+lengthmap[*i];y2+=0.75;
+									x1+=lengthmap[*i1]/2;y1+=1.7;x2+=lengthmap[*i];y2+=0.75;
 								}
 
 							}else if ((x1>x2)&&(y1>y2)){
@@ -346,7 +365,7 @@ void PRMDisplay::placeProbabilistLink(){
 								}else if (distmin==dist4){
 									x1+=lengthmap[*i1]/2;
 									y1+=1.7;
-									x2=+lengthmap[*i];
+									x2+=lengthmap[*i];
 									y2+=0.75;
 								}
 							}else if ((x1<x2)&&(y1>y2)){
@@ -362,18 +381,18 @@ void PRMDisplay::placeProbabilistLink(){
 								}else if (distmin==dist3){
 									x1+=lengthmap[*i1];y1+=0.75;y2+=0.75;
 								}else if (distmin==dist4){
-									x1+=lengthmap[*i1];y1=+0.75;x2+=lengthmap[*i]/2;y2+=1.7;
+									x1+=lengthmap[*i1];y1+=0.75;x2+=lengthmap[*i]/2;y2+=1.7;
 								}
 							}else if ((x1<x2)&&(y1<y2)){
-								dist1=distanceBetweenDot(x1+lengthmap[*i1]/2,y1+0.75,x2+lengthmap[*i]/2,y2);
-								dist2=distanceBetweenDot(x1+lengthmap[*i1]/2,y1+0.75,x2,y2+0.75);
+								dist1=distanceBetweenDot(x1+lengthmap[*i1]/2,y1+1.5,x2+lengthmap[*i]/2,y2);
+								dist2=distanceBetweenDot(x1+lengthmap[*i1]/2,y1+1.5,x2,y2+0.75);
 								dist3=distanceBetweenDot(x1+lengthmap[*i1],y1+0.75,x2+lengthmap[*i]/2,y2);
 								dist4=distanceBetweenDot(x1+lengthmap[*i1],y1+0.75,x2,y2+0.75);
 								float distmin=minDistance4point(dist1,dist2,dist3,dist4);
 								if (distmin==dist1){
-									x1+=lengthmap[*i1]/2;y1+=0.75;x2+=lengthmap[*i]/2;y2-=0.2;
+									x1+=lengthmap[*i1]/2;y1+=1.7;x2+=lengthmap[*i]/2;y2-=0.2;
 								}else if (distmin==dist2){
-									x1+=lengthmap[*i1]/2;y1+=0.75;y2+=0.75;
+									x1+=lengthmap[*i1]/2;y1+=1.7;y2+=0.75;
 								}else if (distmin==dist3){
 									x1+=lengthmap[*i1];
 									y1+=0.75;x2+=lengthmap[*i]/2;
@@ -381,8 +400,8 @@ void PRMDisplay::placeProbabilistLink(){
 								}else if (distmin==dist4){
 									x1+=lengthmap[*i1];y1+=0.75;y2+=0.75;
 								}
-							}
-							board.drawArrow(x1,y1, x2,y2);
+							}				
+							drawProbabilistLink(aggregat,x1,y1, x2,y2);
 							break;
 						}
 					}
@@ -391,6 +410,36 @@ void PRMDisplay::placeProbabilistLink(){
 		}
 	 }
 			
+	
+}
+
+void PRMDisplay::drawProbabilistLink(const std::string aggregat, float x1,float y1,float x2,float y2 ){
+	if(aggregat.compare("NO")==0){
+		board.setLineWidth(0.5);
+		board.drawArrow(x1,y1, x2,y2);
+	}else{
+		float tmpX1, tmpY1, a, b, tmpX2, tmpY2;
+		a=(y2-y1)/(x2-x1);
+		b=y1-(a*x1);
+		board.setLineWidth(1);
+		tmpX1=(x1+x2)/2; 
+		tmpY1=(y1+y2)/2; 
+		if (y2<y1){
+			tmpY2=tmpY1-1.5;
+			tmpX2=(tmpY2-b)/a;		
+			board.drawText(tmpX1-(aggregat.length()/2)+.4, tmpY1-0.3, aggregat);
+			board.drawRectangle(tmpX1-(aggregat.length()/2), tmpY2, aggregat.length(), 1.5);
+		}else if (y1<y2){
+			tmpY2=tmpY1+1.5;
+			tmpX2=(tmpY2-b)/a;		
+			board.drawText(tmpX1-(aggregat.length()/2)+.4, tmpY2-0.3, aggregat);
+			board.drawRectangle(tmpX1-(aggregat.length()/2), tmpY1, aggregat.length(), 1.5);
+
+		}
+		board.drawLine(x1,y1,tmpX1, tmpY1);
+		board.drawArrow(tmpX2, tmpY2, x2,y2);
+	}
+	
 	
 }
 
