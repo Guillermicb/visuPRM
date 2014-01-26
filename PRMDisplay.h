@@ -99,6 +99,8 @@ namespace prm{
 		void drawProbabilistLink(const std::string aggregat, float x1,float y1,float x2,float y2 );
 		std::pair<double, double> get2DLinearEquation(Points, Points) throw();
 		Points& reversePointCoordinate(Points&);
+		std::map<std::string, unsigned int> computeProbabilisticConnection();
+		std::string concat2SortedClass(std::string, std::string);
 
 		/*!
 		 * \return TRUE if xcoordinate is between x1 and x2

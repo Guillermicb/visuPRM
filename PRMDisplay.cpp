@@ -607,7 +607,7 @@ void PRMDisplay::addVertex(const std::string& verticeName, std::map<std::string,
 	container[verticeName] = vd;
 }
 
-void PRMDisplay::addForeignKeyEdges_multiConnectedAttributs(std::map<std::string, VertexDescriptor>& verticeContainer, const double edgeWweight){
+void PRMDisplay::addForeignKeyEdges_multiConnectedAttributs(std::map<std::string, VertexDescriptor>& verticeContainer, const double edgeWeight){
 	/***** ajout d'arête pour chaque clé étrangère ****/
 	RefSlotsMultimap foreignKeys = rbn->getSchema().getRefSlots();
 	std::string classPK, classFK;
@@ -628,18 +628,20 @@ void PRMDisplay::addForeignKeyEdges_multiConnectedAttributs(std::map<std::string
 				  std::stringstream vertice1, vertice2;
 				  vertice1 << classPK << "." << *PKAttributsIterator;
 				  vertice2 << classFK << "." << *FKAttributsIterator;
-				  boost::add_edge(verticeContainer[vertice1.str()], verticeContainer[vertice2.str()], EdgeProperty(edgeWweight), graph);
+				  boost::add_edge(verticeContainer[vertice1.str()], verticeContainer[vertice2.str()], EdgeProperty(edgeWeight), graph);
 			}
 		}
 	}
 }
 
-void PRMDisplay::addProbabilistLink(std::map<std::string, VertexDescriptor>& verticeContainer, const double edgeWweight){
+void PRMDisplay::addProbabilistLink(std::map<std::string, VertexDescriptor>& verticeContainer, const double edgeWeight){
 	std::map<std::string, VertexDescriptor>::iterator verticeIterator;
-	std::string vertexName, parentName;
+	std::string vertexName, parentName, key;
 	prm::RBNVariablesSequence variablesSequence;
+	std::map<std::string, unsigned int> probabilisticConnection;
+	double weight, weighting = 1. ; 
 
-
+	probabilisticConnection = computeProbabilisticConnection();
 	for(verticeIterator = verticeContainer.begin(); verticeIterator != verticeContainer.end(); verticeIterator++){
 		vertexName = verticeIterator->first;
 		
@@ -647,11 +649,59 @@ void PRMDisplay::addProbabilistLink(std::map<std::string, VertexDescriptor>& ver
 			variablesSequence = rbn->getParents(vertexName);
 			for(unsigned int i = 0; i < variablesSequence.dim(); i++){
 				parentName = variablesSequence[i]->toString();
-				boost::add_edge(verticeContainer[vertexName], verticeContainer[parentName], EdgeProperty(edgeWweight), graph);
+				key = concat2SortedClass(vertexName, parentName);
+				/*Déterminer une fonction inverse pour pondérer le poids de l'arête*/
+				weighting = 1.0 / static_cast<double>(probabilisticConnection.at(key));
+				weight = edgeWeight * (1 + weighting);
+				boost::add_edge(verticeContainer[vertexName], verticeContainer[parentName], EdgeProperty(weight), graph);
 			}
 		}
 	}
 }
+
+std::string PRMDisplay::concat2SortedClass(std::string str1, std::string str2){
+	std::string result;
+
+	str1 = str1.substr(0, str1.find("."));
+	str2 = str2.substr(0, str2.find("."));
+
+	if(str1.compare(str2) < 0 ){
+		result = str1;
+		result.append(".");
+		result.append(str2);
+	} else {
+		result = str2;
+		result.append(".");
+		result.append(str1);
+	}
+	return result;
+}
+
+std::map<std::string, unsigned int> PRMDisplay::computeProbabilisticConnection(){
+	boost::graph_traits<Graph>::vertex_iterator verticeIterator, end;
+	std::map<std::string, unsigned int> result;
+	std::string vertexName, parentName, key;
+	prm::RBNVariablesSequence variablesSequence;
+	vertexIdPropertyMap = boost::get(&VertexProperties::index, graph);
+
+	for( boost::tie(verticeIterator, end) = boost::vertices(graph); verticeIterator != end; verticeIterator++){
+		vertexName = vertexIdPropertyMap[*verticeIterator];
+		if(rbn->existsNode(vertexName)){
+			variablesSequence = rbn->getParents(vertexName);
+			for(unsigned int i = 0; i < variablesSequence.dim(); i++){
+				parentName = variablesSequence[i]->toString();
+				key = concat2SortedClass(vertexName,parentName);
+				if(result.count(key) == 1){
+					result[key] += 1;
+				} else {
+					result[key] = 1;
+				}
+			}
+		}
+	}
+	return result;
+}
+
 
 void PRMDisplay::RBNToGraph_ArtificialClassVertex(const double attributeWeight, const double FKWeight, const double probWeight){
 	/*rechercher toutes classes et tous les attributs*/
@@ -774,7 +824,7 @@ int PRMDisplay::getNbCrossing(){
 						if(beginPoint_edge1[0] == endPoint_edge1[0]) { //arête1 verticale
 							if(isBetween(beginPoint_edge1[0], beginPoint_edge2[0], endPoint_edge2[0]) &&
 								isBetween(beginPoint_edge2[1], beginPoint_edge1[1], endPoint_edge1[1])) {
-									result++;	
+									result++;
 							}
 						} else { //arête 2 verticale
 							if(isBetween(beginPoint_edge2[0], beginPoint_edge1[0], endPoint_edge1[0]) &&
