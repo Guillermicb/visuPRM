@@ -159,7 +159,7 @@ int main(int argc, char **argv) {
 		mySvgFile.append(tmp);
 		std::cout << "Graphe de contrainte\n";
 		prmdisplay=new prm::PRMDisplay(rbnTest,graph); 
-		prmdisplay->RBNToGraph_ArtificialClassVertex(1,indice,indice);
+		prmdisplay->RBNToGraph_preComputedClassVertex(1,indice);
 
 	// Etape 2: algorithme de placement
 		std::cout << "Application Kamada\n";

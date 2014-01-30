@@ -87,12 +87,14 @@ namespace prm{
 		LengthMap lengthmap;
 		std::vector<ColorClass> listColor;
 		std::vector<RectClass> listRect;
-		float delta; // espace entre les attributs et le rectangle de la classe
+		double delta; // espace entre les attributs et le rectangle de la classe
 		void adjustDisplayAfterKamada(const double lenght);
 		void displayKamadaCheck(bool);
 		void addVertex(const std::string&, std::map<std::string, VertexDescriptor>&);
+		void addVertex(const std::string&, std::map<std::string, VertexDescriptor>&, Graph& myGraph, PositionMap&);
 		void addForeignKeyEdges_multiConnectedAttributs(std::map<std::string, VertexDescriptor>&, const double edgeWweight);
 		void addForeignKeyEdges_artificialClassVertex(std::map<std::string, VertexDescriptor>&, const double edgeWweight);
+		void addForeignKeyEdges_artificialClassVertex(std::map<std::string, VertexDescriptor>&, const std::map<std::string, std::pair<double, double>>&);
 		void addProbabilistLink(std::map<std::string, VertexDescriptor>&, const double edgeWweight);
 		bool checkFkPkAttribute(const std::string&,const std::string&);
 		void drawRelationnalLink(int nbCoude, float x1,float y1,float x2,float y2 );
@@ -101,6 +103,15 @@ namespace prm{
 		Points& reversePointCoordinate(Points&);
 		std::map<std::string, unsigned int> computeProbabilisticConnection();
 		std::string concat2SortedClass(std::string, std::string);
+		void prevKamada(const double sideLenght, Graph& myGraph, PositionMap&);
+		double computeEdgeWeight(const std::string&, const std::string&, const std::map<std::string, std::pair<double, double>>&);
+
+		/*!
+		 * \return width and height from the graph bounding box
+		 * \param a graph you want to compute
+		 */
+		std::pair<double, double> computeBoundingLength(Graph&);
+		
 
 		/*!
 		 * \return TRUE if xcoordinate is between x1 and x2
@@ -140,6 +151,7 @@ namespace prm{
 		void RBNToGraph(const double attributeWeight, const double FKWeight);
 		void RBNToGraph_AllAttributsConnected(const double attributeWeight, const double FKWeight, const double probWeight);
 		void RBNToGraph_ArtificialClassVertex(const double attributeWeight, const double FKWeight, const double probWeight);
+		void RBNToGraph_preComputedClassVertex(const double attributeWeight, const double probWeight);
 		void usedKamada(const double sideLenght);
 		double distanceBetweenDot(float x1,float y1,float x2,float y2);
 		inline double  min(float a,float b){return a<b?a:b;}
@@ -150,6 +162,7 @@ namespace prm{
 		int getMaxCrossing();
 		double getCrossingScore();
 		void initGraph();
+		std::pair<Points, Points> getExtremGraphPoint(Graph&);
 
 	};
 
