@@ -22,6 +22,7 @@
 #include <vector>
 #include <Board.h>
 
+
 using namespace LibBoard;
 typedef boost::circle_topology<>::point_type Points;
 typedef boost::circle_topology<> Topology;
@@ -29,7 +30,7 @@ struct VertexProperties
 {
     std::string index;//Classes.Attribut
     Points point;
-	float length; 
+	double length; 
 };
 
 struct EdgeProperty
@@ -40,12 +41,6 @@ struct EdgeProperty
 };
 
 
-struct Dot
-{
-    int x;
-    int y;
-};
-
 typedef boost::adjacency_list<boost::vecS,
             boost::vecS, boost::undirectedS,
             VertexProperties, EdgeProperty > Graph;
@@ -53,41 +48,35 @@ typedef boost::adjacency_list<boost::vecS,
 
 typedef boost::property_map<Graph, std::string VertexProperties::*>::type VertexIndexPropertyMap;
 typedef boost::property_map<Graph, Points VertexProperties::*>::type PositionMap;
-typedef boost::property_map<Graph, float VertexProperties::*>::type LengthMap;
+typedef boost::property_map<Graph, double VertexProperties::*>::type LengthMap;
 typedef boost::property_map<Graph, double EdgeProperty::*>::type WeightPropertyMap;
 
 typedef boost::graph_traits<Graph>::vertex_descriptor VertexDescriptor;
 
 
-typedef struct ColorClass {
-	int red; 
-	int blue; 
-	int green;
-	std::string classeName;
-};
-
 typedef struct RectClass {
-	float x; 
-	float y; 
-	float len;
-	float hei;
+	double x; 
+	double y; 
+	double len;
+	double hei;
 	std::string classeName;
-	#include <limits>;
 };
 
 namespace prm{
 
 	class PRMDisplay{
 	private: 
+		//Attributes
 		Graph graph;
 		boost::shared_ptr<prm::RBN> rbn;
 		PositionMap  positionMap;
 		Board board;
 		VertexIndexPropertyMap vertexIdPropertyMap;
 		LengthMap lengthmap;
-		std::vector<ColorClass> listColor;
 		std::vector<RectClass> listRect;
 		double delta; // espace entre les attributs et le rectangle de la classe
+
+		// Functions
 		void adjustDisplayAfterKamada(const double lenght);
 		void displayKamadaCheck(bool);
 		void addVertex(const std::string&, std::map<std::string, VertexDescriptor>&);
@@ -97,8 +86,8 @@ namespace prm{
 		void addForeignKeyEdges_artificialClassVertex(std::map<std::string, VertexDescriptor>&, const std::map<std::string, std::pair<double, double>>&);
 		void addProbabilistLink(std::map<std::string, VertexDescriptor>&, const double edgeWweight);
 		bool checkFkPkAttribute(const std::string&,const std::string&);
-		void drawRelationnalLink(int nbCoude, float x1,float y1,float x2,float y2 );
-		void drawProbabilistLink(const std::string aggregat, float x1,float y1,float x2,float y2 );
+		void drawRelationnalLink(int nbCoude, double x1,double y1,double x2,double y2 );
+		void drawProbabilistLink(const std::string aggregat, double x1,double y1,double x2,double y2 );
 		std::pair<double, double> get2DLinearEquation(Points, Points) throw();
 		Points& reversePointCoordinate(Points&);
 		std::map<std::string, unsigned int> computeProbabilisticConnection();
@@ -141,11 +130,11 @@ namespace prm{
 		 * \brief Dtor.
 		 */
 		// ~PRMDisplay();
-		void placeVertex();
-		void placeRelationnalLink();
-		void placeProbabilistLink();
-		void placeClasse();
-		void makeVertexColor(const std::string& colorname);
+		void placeVertex(int red, int green, int blue);
+		void placeRelationnalLink(int red, int green, int blue);
+		void placeProbabilistLink(int red, int green, int blue);
+		void placeClasse(int red, int green, int blue);
+		//void makeVertexColor(const std::string& colorname);
 		void display(const std::string& path, const std::string& name);
 
 		void RBNToGraph(const double attributeWeight, const double FKWeight);
@@ -153,16 +142,19 @@ namespace prm{
 		void RBNToGraph_ArtificialClassVertex(const double attributeWeight, const double FKWeight, const double probWeight);
 		void RBNToGraph_preComputedClassVertex(const double attributeWeight, const double probWeight);
 		void usedKamada(const double sideLenght);
-		double distanceBetweenDot(float x1,float y1,float x2,float y2);
-		inline double  min(float a,float b){return a<b?a:b;}
-		double minDistance4point(float a,float b,float c,float d );
-		void drawClass();
+		double distanceBetweenDot(double x1,double y1,double x2,double y2);
+		inline double  min(double a,double b){return a<b?a:b;}
+		inline double  max(double a,double b){return a>b?a:b;}
+		double minDistance4point(double a,double b,double c,double d );
+		void drawClass(int red, int green, int blue);
+		std::vector<double> intersectionEllispeLine(double axe1, double axe2, double x1, double y1, double x2, double y2, int extremite);
 
 		int getNbCrossing();
 		int getMaxCrossing();
 		double getCrossingScore();
 		void initGraph();
 		std::pair<Points, Points> getExtremGraphPoint(Graph&);
+		std::vector<double> displaySize();
 
 	};
 

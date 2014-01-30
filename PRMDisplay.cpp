@@ -11,35 +11,31 @@ using namespace prm;
 PRMDisplay::PRMDisplay(const boost::shared_ptr<prm::RBN> rbn, const Graph& graph):rbn(rbn), graph(graph){
 	board.clear( Color(255,255,255) );
 	board.setUnit(8, Board::UPoint);
-	board.setFontSize(10);
+	board.setFontSize(14);
 	board.setPenColorRGBi( 255, 0, 0);
 	board.setLineWidth(0.5);
-	srand (time(NULL));
+
 	delta=1.0;
 	
 }
-PRMDisplay::PRMDisplay(const boost::shared_ptr<prm::RBN> rbn, const PositionMap& postionMap, const VertexIndexPropertyMap& vertexNamemap, const Graph& graph):rbn(rbn), positionMap(postionMap), vertexIdPropertyMap(vertexNamemap), graph(graph){
-	this->board.clear( Color(255,255,255) );
-	board.setUnit(1, Board::UCentimeter);
-  board.setPenColorRGBi( 255, 0, 0);
-  board << LibBoard::Rectangle( -8, 12, 16, 24, Color::Black, Color::None, 0.1 );
-  board.setLineWidth( 2 );
-  srand (time(NULL));
+
+std::vector<double> PRMDisplay::displaySize(){
+	std::vector<double> result;
+	double minX=0, maxX=0,minY=0, maxY=0;
+	minX=listRect[0].x; 
+	minY=listRect[0].y; 
+	for (std::vector<RectClass>::iterator it = listRect.begin();it != listRect.end(); ++it){
+		minY=min(it->y, minY);
+		maxY=max(it->y+it->hei, maxY);
+		minX=min(it->x, minX);
+		maxX=max(it->x+it->len, maxX);
+	}
+	result.push_back(maxX-minX + 20);
+	result.push_back(maxY-minY + 20);
+	return result;
 }
 
-PRMDisplay::PRMDisplay(const PositionMap& postionMap, const VertexIndexPropertyMap& vertexNamemap, const Graph& graph):positionMap(postionMap), vertexIdPropertyMap(vertexNamemap), graph(graph){
-	this->board.clear( Color(255,255,255) );
-	board.setUnit(1, Board::UCentimeter);
-  board.setPenColorRGBi( 255, 0, 0);
-  board.setLineWidth( 2 );
-  srand (time(NULL));
-}
-
-float  random_gray() {
-  return rand() / 255;
-}
-
-void PRMDisplay::placeVertex(){
+void PRMDisplay::placeVertex(int red, int green, int blue){
 	std::map<std::string, Color> colorclasse; 
 	int nbclasse=5;
 	srand( static_cast<unsigned int>( time(0) ) );
@@ -49,17 +45,27 @@ void PRMDisplay::placeVertex(){
 		std::string classename=vertexIdPropertyMap[*i].substr(0,vertexIdPropertyMap[*i].find("."));
 		std::string attribute=vertexIdPropertyMap[*i].substr(vertexIdPropertyMap[*i].find(".")+1, vertexIdPropertyMap[*i].length());
 		// couleur
-		makeVertexColor(classename);
-		lengthmap[*i]=attribute.length()/1.35;
+		//makeVertexColor(classename);
+		if (attribute.length()<=7){
+			lengthmap[*i]=attribute.length()/1.35f;
+		}else{
+			lengthmap[*i]=attribute.length()/1.65f;
+		}
 		if (vertexIdPropertyMap[*i].find(".")!=std::string::npos) {
 			//if (checkFkPkAttribute(classename, attribute)){
-					board.drawText(positionMap[*i][0]+.5,positionMap[*i][1]+1, vertexIdPropertyMap[*i].substr(vertexIdPropertyMap[*i].find(".")+1, vertexIdPropertyMap[*i].length()) );
+					//board.setPenColorRGBi( 255, 255, 255);
+					//board.fillEllipse(positionMap[*i][0]+lengthmap[*i]/2, positionMap[*i][1]+0.75, lengthmap[*i]/2	, 1, 3 );
+					board.setPenColorRGBi(red, green, blue);
+					board.drawText(positionMap[*i][0]+1,positionMap[*i][1]+.5, vertexIdPropertyMap[*i].substr(vertexIdPropertyMap[*i].find(".")+1, vertexIdPropertyMap[*i].length()), 15000 );
+					lengthmap[*i]+=1;
 					board.drawEllipse(positionMap[*i][0]+lengthmap[*i]/2, positionMap[*i][1]+0.75, lengthmap[*i]/2	, 1 );
+					
+
 					//board.drawRectangle(positionMap[*i][0],positionMap[*i][1],lengthmap[*i],1.5 );
 			//}
 		}
 	}
-	placeClasse();
+	//placeClasse();
 
 }
 
@@ -72,7 +78,7 @@ bool PRMDisplay::checkFkPkAttribute(const std::string& classename,const std::str
 	return false;
 }
 
-void PRMDisplay::makeVertexColor(const std::string& classename){
+/*void PRMDisplay::makeVertexColor(const std::string& classename){
 	bool trouve=false;
 		if (listColor.empty()){
 			ColorClass c;
@@ -103,8 +109,8 @@ void PRMDisplay::makeVertexColor(const std::string& classename){
 			}
 		}
 }
-
-void PRMDisplay::placeClasse(){
+*/
+void PRMDisplay::placeClasse(int red, int green, int blue){
 	boost::graph_traits<Graph>::vertex_iterator i, end;
     for (boost::tie(i, end) = boost::vertices(graph); i != end; ++i) {
 		std::string classename=vertexIdPropertyMap[*i].substr(0,vertexIdPropertyMap[*i].find("."));
@@ -135,12 +141,12 @@ void PRMDisplay::placeClasse(){
 							it->len+=std::abs(positionMap[*i][0]+lengthmap[*i]-(it->x+it->len));
 						}
 						// je regle la hauteur du rectangle
-						if ((it->y<=positionMap[*i][1]) && ((it->y)+(it->hei)>=(positionMap[*i][1]+1.5))) {
+						if ((it->y<=positionMap[*i][1]) && ((it->y)+(it->hei)>=(positionMap[*i][1]+1.5f))) {
 
 						}else if (it->y>positionMap[*i][1]){
 							it->hei+=std::abs(it->y-positionMap[*i][1]);
-						}else if ((it->y)+(it->hei)<(positionMap[*i][1]+1.5)){
-							it->hei+=std::abs(positionMap[*i][1]+1.5-(it->y+it->hei));
+						}else if ((it->y)+(it->hei)<(positionMap[*i][1]+1.5f)){
+							it->hei+=std::abs(positionMap[*i][1]+1.5f-(it->y+it->hei));
 						}
 						//je regle le point en haut à gauche du rectangle
 						if (it->x>positionMap[*i][0]) { it->x=positionMap[*i][0];}
@@ -165,36 +171,33 @@ void PRMDisplay::placeClasse(){
 		
 		}
 	}
-	drawClass();
+	drawClass(red, green, blue);
 }
 
-void PRMDisplay::drawClass(){
+void PRMDisplay::drawClass(int red, int green, int blue){
 	// je dessine les rectangles de classe avec la bonne couleur de pinceau
+	board.setPenColorRGBi( red, green, blue);
 	for (std::vector<RectClass>::iterator it = listRect.begin();it != listRect.end(); ++it){
-		for (std::vector<ColorClass>::iterator it1 = listColor.begin();it1 != listColor.end(); ++it1){
-				if (it1->classeName.compare(it->classeName)==0){
-				 board.setPenColorRGBi(it1->red, it1->green, it1->blue);
-				 break;
-				}
-			}
+		it->y-=delta; it->hei+=delta+delta+1.5f;it->x-=delta;it->len+=delta+delta;
+		board.drawRectangle(it->x,it->y+it->hei,it->len,it->hei);	
+		/*board.drawLine(it->x,it->y,it->x+it->len,it->y );
+		board.drawLine(it->x,it->y,it->x,it->hei+it->y );
+		board.drawLine(it->x,it->hei+it->y,it->x+it->len,it->hei+it->y );
+		board.drawLine(it->x+it->len,it->y,it->x+it->len,it->hei+it->y );*/
+		board.drawText(it->x+.1,it->y+it->hei-1, it->classeName,10 );
 		
-		board.drawRectangle(it->x-delta,it->y-delta-1.5,it->len+delta+delta,it->hei+delta+delta+1.5);	
-		
-		board.drawText(it->x-delta+.1,it->y-delta-0.2, it->classeName,10 );
-		it->y+=-1.5-delta; it->hei+=+delta+delta+1.5;it->x-=delta;it->len+=delta+delta;
 	}
 }
 
-void PRMDisplay::placeRelationnalLink(){
-	board.setPenColorRGBi( 255, 0, 0);
-	
+void PRMDisplay::placeRelationnalLink(int red, int green, int blue){
+	board.setPenColorRGBi( red, green, blue);
 	std::map<std::string, std::string> result; // model (classe.FK, classe1.PK)
 	RefSlotsMultimap refSlots = rbn->getSchema().getRefSlots();
 	// Fisrt: get all the link between PK and FK	
 	for(RefSlotsMultimap::iterator rb = refSlots.begin(); rb != refSlots.end(); ++rb){
 		std::string classPK=rb->second.second->getName().c_str();
 		std::string classFK=rb->first.c_str();
-		float x1,x2,y1,y2;
+		double x1,x2,y1,y2;
 		 RectClass PK, FK;
 		for (std::vector<RectClass>::iterator it5 = listRect.begin();it5 != listRect.end(); ++it5){
 			
@@ -218,56 +221,109 @@ void PRMDisplay::placeRelationnalLink(){
 			}
 		}
 		std::cout<<"("<<x1<<","<<y1<<")"<<"("<<x2<<","<<y2<<")"<<std::endl;
-		
-		if (x1+PK.len<x2+FK.len/2) {// le rectangle 2 est a droite du rectangle 1  
-			if ((y1>y2) && (y1<y2+FK.hei)|| ((y1>y2) && (y1+PK.hei<y2+FK.hei))){
-				x1+=PK.len; y1+=PK.hei/2;y2+=FK.hei/2;
-				drawRelationnalLink(2,x1,y1,x2,y2 );
-			}else if ((y1<y2)) {// le rectangle 2 est en dessous du rectangle 1 
-				x1+=PK.len; y1+=2*PK.hei/3; x2+=FK.len/2;
-				drawRelationnalLink(1,x1,y1,x2,y2 );
-			}else{// le rectangle 2 est au dessus du rectangle 1 
-				x1+=PK.len; y1+=PK.hei/3; x2+=FK.len/2;y2+=FK.hei;
-				drawRelationnalLink(1,x1,y1,x2,y2 );
-			}
-			
-		}else if (x1>x2+FK.len/2){// le rectangle 1 est a droite du rectangle 2  
-			if ((y1>y2) && (y1<y2+FK.hei) || ((y1>y2) && (y1+PK.hei<y2+FK.hei))){
-				x1+=PK.len/2;y1+=PK.hei/2;y2+=FK.hei/2;x2+=FK.len;
-				 drawRelationnalLink(2,x1,y1,x2,y2 );
-			}else if ((y1<y2)) {// le rectangle 2 est en dessous du rectangle 1 
-				 y1+=2*PK.hei/3; x2+=FK.len/2;
-				 drawRelationnalLink(1,x1,y1,x2,y2 );
-			}else{// le rectangle 2 est au dessus du rectangle 1
-				y1+=PK.hei/3; x2+=FK.len/2;y2+=FK.hei;
-				drawRelationnalLink(1,x1,y1,x2,y2 );
-			}
-		}else{
-			 if ((y1<y2)) {// le rectangle 2 est en dessous du rectangle 1 
-				 y1+=PK.hei;x2+=FK.len/2;x1+=PK.len/4;
-				 drawRelationnalLink(3,x1,y1,x2,y2 );
-			}else{// le rectangle 2 est au dessus du rectangle 1
-				x1+=PK.len/4; x2+=FK.len/2;y2+=FK.hei;
+		/*s'il ya chevauchement des 2 extremités alors je met 2 coudes du centre du rectangle 1 au centre du rectangle 2
+		  s'il ya chevauchement d'une extremité alors si il y a plus de la moitié du rectangle 1 en dehors du rectangle 2 
+																alors je fait un seul coude
+													sinon je met 2 coudes du centre du rectangle 1 au centre du rectangle 2
+		   si il n'ya pas de chevauchement alors je met un coude*/
+							
+		if (x1<x2 && x1+PK.len>x2+FK.len){// chevauchement en X des 2 cotés
+			x1+=PK.len/2;x2+=FK.len/2;
+			if (y1<y2){ //le rectangle 1 est en dessous du rectangle 2
+				x1+=PK.len/2; y1+=PK.hei; x2+=FK.len/2;
 				drawRelationnalLink(3,x1,y1,x2,y2 );
+			}else if (y1>y2+FK.hei){ //le rectangle 1 est en dessus du rectangle 2
+				x1+=PK.len/2; y2+=FK.hei; x2+=FK.len/2;
+				drawRelationnalLink(3,x1,y1,x2,y2 );
+			}
+		}else if ((x2<= x1  && x1< x2+FK.len) || (x2< x1+PK.len && x1+PK.len <= x2+FK.len)){ // chevauchement en X d'un coté ou de l'autre
+			if (y1<y2){ //le rectangle 1 est en dessous du rectangle 2
+				if (x1<x2 && x1+PK.len/2<=x2 ){
+					x1+=PK.len/3;y1+=PK.hei; y2+=FK.hei/3;
+					drawRelationnalLink(4,x1,y1,x2,y2 );
+				}else if(x2+FK.len<=x1+PK.len/2) {
+					x1+=2*PK.len/3;y1+=PK.hei; y2+=FK.hei/3; x2+=FK.len;
+					drawRelationnalLink(4,x1,y1,x2,y2 );
+				}else{
+					x1+=PK.len/2; y1+=PK.hei; x2+=FK.len/2;
+					drawRelationnalLink(3,x1,y1,x2,y2 );
+				}
+			}else if (y1>y2+FK.hei){ //le rectangle 1 est en dessus du rectangle 2
+				if (x1<x2 && x1+PK.len/2<=x2 ){
+					x1+=PK.len/3; y2+=2*FK.hei/3;
+					drawRelationnalLink(4,x1,y1,x2,y2 );
+				}else if(x2+FK.len<=x1+PK.len/2) {
+					x1+=2*PK.len/3;y2+=2*FK.hei/3; x2+=FK.len;
+					drawRelationnalLink(4,x1,y1,x2,y2 );
+				}else{
+					x1+=PK.len/2; y2+=FK.hei; x2+=FK.len/2;
+					drawRelationnalLink(3,x1,y1,x2,y2 );
+				}
+			}
+
+		}else if (y1<y2 && y1+PK.hei>y2+FK.len){// chevauchement en Y des 2 cotés
+			if (x1<x2){ //le rectangle 1 est a gauche du rectangle 2
+				x1+=PK.len;y1+=PK.hei/2;y2+=FK.len/2;
+				drawRelationnalLink(2,x1,y1,x2,y2 );
+			}else if (x1>x2){ //le rectangle 1 est en dessus du rectangle 2
+				y1+=PK.hei/2;y2+=FK.len/2;x2+=FK.len;
+				drawRelationnalLink(2,x1,y1,x2,y2 );
+			}
+		}else if ((y2<= y1  && y1< y2+FK.hei) || (y2< y1+PK.hei && y1+PK.hei <= y2+FK.hei)){ // chevauchement en Y
+			if (x1<x2){ //le rectangle 1 est en gauche du rectangle 2
+				if (y1<y2 && y1+PK.hei/2<y2 ){
+					x1+=PK.len;y1+=PK.hei/3;x2+=FK.len/3;
+					drawRelationnalLink(1,x1,y1,x2,y2 );
+				}else if(y2+FK.hei<y1+PK.hei/2) {
+					x1+=PK.len;y1+=2*PK.hei/3;x2+=FK.len/3;y2+=FK.hei;
+					drawRelationnalLink(1,x1,y1,x2,y2 );
+				}else{
+					x1+=PK.len;y1+=PK.hei/2;y2+=FK.len/2;
+					drawRelationnalLink(2,x1,y1,x2,y2 );
+				}
+			}else if (x1>x2){ //le rectangle 1 est en droite du rectangle 2
+				if (y1<y2 && y1+PK.hei/2<y2 ){
+					y1+=PK.hei/3;x2+=2*FK.len/3;
+					drawRelationnalLink(1,x1,y1,x2,y2 );
+				}else if(y2+FK.hei<y1+PK.hei/2) {
+					y1+=2*PK.hei/3;x2+=2*FK.len/3;y2+=FK.hei;
+					drawRelationnalLink(1,x1,y1,x2,y2 );
+				}else{
+					y1+=PK.hei/2;y2+=FK.len/2;x2+=FK.len;
+					drawRelationnalLink(2,x1,y1,x2,y2 );
+				}
+			}
+		}else{ // pas de chevauchement
+			if (x1+PK.hei<x2){//1 gauche de 2
+				if (y1+PK.hei<=y2){ //1 dessous 2
+					x1+=2*PK.len/3; y1+=PK.hei; y2+=FK.hei/3;
+					drawRelationnalLink(4,x1,y1,x2,y2 );
+				}else{// if (y1>=y2+FK.hei){//1 dessus 2
+					x1+=PK.len; y1+=PK.hei/3; y2+=FK.hei;x2+=FK.len/3;
+					drawRelationnalLink(1,x1,y1,x2,y2 );
+				}
+			}else{//1 droite de 2
+				if (y1+PK.hei<=y2){ //1 dessous 2
+					x1+=PK.len/3; y1+=PK.hei; x2+=FK.len;y2+=FK.hei/3;
+					drawRelationnalLink(4,x1,y1,x2,y2 );
+				}else{// if (y1>=y2+FK.hei){//1 dessus 2
+					 y1+=PK.hei/3; y2+=FK.hei;x2+=2*FK.len/3;
+					 drawRelationnalLink(1,x1,y1,x2,y2 );
+				}
 			}
 
 		}
-
-		
-		
-		
-		//result.insert(std::pair<std::string, std::string>(classFK, classPK));
 	}
 }
 
-void PRMDisplay::drawRelationnalLink(int nbCoude, float x1,float y1,float x2,float y2 ){
-	float tmpX, tmpY;
+void PRMDisplay::drawRelationnalLink(int nbCoude, double x1,double y1,double x2,double y2 ){
+	double tmpX, tmpY;
 	switch (nbCoude){
-	case 1: 
+	case 1: //forme: -|
 		board.drawLine(x1,y1,x2,y1);
 		board.drawLine(x2,y1,x2,y2);
 		break; 
-	case 2: 
+	case 2: //forme -|_
 		tmpX=std::abs(x1-x2)/2;
 		if (x1<x2){tmpX+=x1;} else {tmpX+=x2;}
 		board.drawLine(x1,y1,tmpX,y1);
@@ -276,31 +332,77 @@ void PRMDisplay::drawRelationnalLink(int nbCoude, float x1,float y1,float x2,flo
 
 		break;
 
-	case 3:
+	case 3://forme '-,
 		tmpY=std::abs(y1-y2)/2;
 		if (y1<y2){tmpY+=y1;} else {tmpY+=y2;}
 		board.drawLine(x1,y1,x1,tmpY);
 		board.drawLine(x2,tmpY,x1,tmpY);
 		board.drawLine(x2,tmpY,x2,y2);
 		break;
+
+	case 4://forme |_
+		board.drawLine(x1,y1,x1,y2);
+		board.drawLine(x1,y2,x2,y2);
+		break;
+
 	}
 }
 
-double PRMDisplay::distanceBetweenDot(float x1,float y1,float x2,float y2 ){
+double PRMDisplay::distanceBetweenDot(double x1,double y1,double x2,double y2 ){
 	return std::sqrt((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2));
 }
 
 
-double PRMDisplay::minDistance4point(float a,float b,float c,float d ){
-	float mini; 
+double PRMDisplay::minDistance4point(double a,double b,double c,double d ){
+	double mini; 
 	mini=min(a,b);
 	mini=min(mini,c);
 	mini=min(mini,d);
 	return mini;
 }
 
-void PRMDisplay::placeProbabilistLink(){ 
-	board.setPenColorRGBi( 0, 0,255);
+std::vector<double> PRMDisplay::intersectionEllispeLine(double axe1, double axe2, double x1, double y1, double x2, double y2, int extremite) {
+		double X1,Y1,X2,Y2, a, c,d;
+		
+		//changement de repere
+		/*X=x-x1;
+		Y=y-y1;*/
+		//Coefficient directeur de la droite	
+		if(extremite==1){
+			a=(y2-y1)/(x2-x1);
+		}else{
+			a=(y1-y2)/(x1-x2);
+		}
+		//b=y1-(a*x1);
+		//coefficient ellispe
+		c=axe1*axe1;
+		d=axe2*axe2;
+		//calcul de X et de Y
+		X1 =axe1*axe2 / std::sqrt( (axe2*axe2) + (axe1*axe1)*(a*a) );
+		X2 =-axe1*axe2 / std::sqrt( (axe2*axe2) + (axe1*axe1)*(a*a) );
+		Y1 = a*X1;
+		Y2 = a*X2;
+		std::vector<double> result;
+
+		if (extremite==1){
+			result.push_back(X1+x1);
+			result.push_back(Y1+y1);
+			result.push_back(X2+x1);
+			result.push_back(Y2+y1);
+			
+		}else{
+			result.push_back(X1+x2);
+			result.push_back(Y1+y2);
+			result.push_back(X2+x2);
+			result.push_back(Y2+y2);
+		}
+
+		//std::vector<double> results (result, result + sizeof(result) / sizeof(double) );
+		return result;
+}
+
+void PRMDisplay::placeProbabilistLink(int red, int green, int blue){ 
+	board.setPenColorRGBi( red, green, blue);
 	boost::graph_traits<Graph>::vertex_iterator i, end;
 	RBNVariablesSequence seq;
 	std::string aggregat;
@@ -314,93 +416,42 @@ void PRMDisplay::placeProbabilistLink(){
 					for (boost::tie(i1, end1) = boost::vertices(graph); i1 != end1; ++i1) {
 						if (vertexIdPropertyMap[*i1].compare(dynamic_pointer_cast<IRBNSimpleVariable>(seq[j])->getBaseName())==0){
 							aggregat=Aggregator::getAggregatorName(seq[j]->getAggregatorType());
-							float x1,x2,y1,y2, dist1, dist2, dist3, dist4;
-							x1=positionMap[*i1][0];
-							y1=positionMap[*i1][1];
-							x2=positionMap[*i][0];
-							y2=positionMap[*i][1];
-							// Comparer les position pour placer x et Y correctement
-							if ((x1>x2)&&(y1<y2)){
-								dist1=distanceBetweenDot(x1,y1+0.75,x2+lengthmap[*i]/2,y2);
-								dist2=distanceBetweenDot(x1,y1+0.75,x2+lengthmap[*i],y2+0.75);
-								dist3=distanceBetweenDot(x1+lengthmap[*i1]/2,y1+1.5,x2+lengthmap[*i]/2,y2);
-								dist4=distanceBetweenDot(x1+lengthmap[*i1]/2,y1+1.5,x2+lengthmap[*i],y2+0.75);
-								float distmin=minDistance4point(dist1,dist2,dist3,dist4);
-								if (distmin==dist1){
-									y1+=0.75;
-									x2+=lengthmap[*i]/2;
-									y2-=0.2;
-								}else if (distmin==dist2){
-									y1+=0.75;
-									x2+=lengthmap[*i];
-									y2+=0.75;
-								}else if (distmin==dist3){
-									x1+=lengthmap[*i1]/2;
-									y1+=1.7;
-									x2+=lengthmap[*i]/2;
-									y2-=0.2;
-								}else if (distmin==dist4){
-									x1+=lengthmap[*i1]/2;y1+=1.7;x2+=lengthmap[*i];y2+=0.75;
-								}
+							double x1,x2,y1,y2;
+							x1=positionMap[*i1][0]+lengthmap[*i1]/2;
+							y1=positionMap[*i1][1]+.75;
+							x2=positionMap[*i][0]+lengthmap[*i]/2;
+							y2=positionMap[*i][1]+.75;
+							std::vector<double> intersec2=intersectionEllispeLine(lengthmap[*i]/2, 1, x1, y1,x2,y2,2 ) ;
 
-							}else if ((x1>x2)&&(y1>y2)){
-								dist1=distanceBetweenDot(x1,y1+0.75,x2+lengthmap[*i]/2,y2+1.5);
-								dist2=distanceBetweenDot(x1,y1+0.75,x2+lengthmap[*i],y2+0.75);
-								dist3=distanceBetweenDot(x1+lengthmap[*i1]/2,y1+1.5,x2+lengthmap[*i]/2,y2+1.5);
-								dist4=distanceBetweenDot(x1+lengthmap[*i1]/2,y1+1.5,x2+lengthmap[*i],y2+0.75);
-								float distmin=minDistance4point(dist1,dist2,dist3,dist4);
-								if (distmin==dist1){
-									y1+=0.75;
-									y2+=1.7;
-									x2+=lengthmap[*i]/2;
-								}else if (distmin==dist2){
-									y1+=0.75;
-									x2+=lengthmap[*i];
-									y2+=0.75;
-								}else if (distmin==dist3){
-									x1+=lengthmap[*i1]/2;
-									y1+=1.7;
-									y2+=1.7;
-									x2+=lengthmap[*i]/2;
-								}else if (distmin==dist4){
-									x1+=lengthmap[*i1]/2;
-									y1+=1.7;
-									x2+=lengthmap[*i];
-									y2+=0.75;
-								}
+							std::vector<double> intersec1=intersectionEllispeLine(lengthmap[*i1]/2, 1, x1, y1, x2, y2, 1); 
+							
+							std::cout<<"1 -> ["<<intersec1[0]<<","<<intersec1[1]<<","<<intersec1[2]<<","<<intersec1[3]<<"]\n  ";
+							std::cout<<"2 -> ["<<intersec2[0]<<","<<intersec2[1]<<","<<intersec2[2]<<","<<intersec2[3]<<"]\n  ";
+							
+							if ((x1>x2)&&(y1<y2)){
+								x1=min(intersec1[0],intersec1[2]);
+								y1=max(intersec1[1],intersec1[3]);
+								x2=max(intersec2[0],intersec2[2]);
+								y2=min(intersec2[1],intersec2[3]);
+								
+							}else if ((x1>x2)&&(y1>y2)){ 
+								x1=min(intersec1[0],intersec1[2]);
+								y1=min(intersec1[1],intersec1[3]);
+								x2=max(intersec2[0],intersec2[2]);
+								y2=max(intersec2[1],intersec2[3]);								
+								
 							}else if ((x1<x2)&&(y1>y2)){
-								dist1=distanceBetweenDot(x1+lengthmap[*i1]/2,y1,x2,y2+0.75);
-								dist2=distanceBetweenDot(x1+lengthmap[*i1]/2,y1,x2+lengthmap[*i]/2,y2+1.5);
-								dist3=distanceBetweenDot(x1+lengthmap[*i1],y1+0.75,x2,y2+0.75);
-								dist4=distanceBetweenDot(x1+lengthmap[*i1],y1+0.75,x2+lengthmap[*i]/2,y2+1.5);
-								float distmin=minDistance4point(dist1,dist2,dist3,dist4);
-								if (distmin==dist1){
-									x1+=lengthmap[*i1]/2;y2+=0.75;y1-=0.2;
-								}else if (distmin==dist2){
-									x1+=lengthmap[*i1]/2;x2+=lengthmap[*i]/2;y2+=1.7;y1-=0.2;
-								}else if (distmin==dist3){
-									x1+=lengthmap[*i1];y1+=0.75;y2+=0.75;
-								}else if (distmin==dist4){
-									x1+=lengthmap[*i1];y1+=0.75;x2+=lengthmap[*i]/2;y2+=1.7;
-								}
+								x1=max(intersec1[0],intersec1[2]);
+								y1=min(intersec1[1],intersec1[3]);
+								x2=min(intersec2[0],intersec2[2]);
+								y2=max(intersec2[1],intersec2[3]);
+								
 							}else if ((x1<x2)&&(y1<y2)){
-								dist1=distanceBetweenDot(x1+lengthmap[*i1]/2,y1+1.5,x2+lengthmap[*i]/2,y2);
-								dist2=distanceBetweenDot(x1+lengthmap[*i1]/2,y1+1.5,x2,y2+0.75);
-								dist3=distanceBetweenDot(x1+lengthmap[*i1],y1+0.75,x2+lengthmap[*i]/2,y2);
-								dist4=distanceBetweenDot(x1+lengthmap[*i1],y1+0.75,x2,y2+0.75);
-								float distmin=minDistance4point(dist1,dist2,dist3,dist4);
-								if (distmin==dist1){
-									x1+=lengthmap[*i1]/2;y1+=1.7;x2+=lengthmap[*i]/2;y2-=0.2;
-								}else if (distmin==dist2){
-									x1+=lengthmap[*i1]/2;y1+=1.7;y2+=0.75;
-								}else if (distmin==dist3){
-									x1+=lengthmap[*i1];
-									y1+=0.75;x2+=lengthmap[*i]/2;
-									y2-=0.2;
-								}else if (distmin==dist4){
-									x1+=lengthmap[*i1];y1+=0.75;y2+=0.75;
-								}
-							}				
+								x1=max(intersec1[0],intersec1[2]);
+								y1=max(intersec1[1],intersec1[3]);
+								x2=min(intersec2[0],intersec2[2]);
+								y2=min(intersec2[1],intersec2[3]);
+							}
 							drawProbabilistLink(aggregat,x1,y1, x2,y2);
 							break;
 						}
@@ -413,33 +464,60 @@ void PRMDisplay::placeProbabilistLink(){
 	
 }
 
-void PRMDisplay::drawProbabilistLink(const std::string aggregat, float x1,float y1,float x2,float y2 ){
+void PRMDisplay::drawProbabilistLink(const std::string aggregat, double x1,double y1,double x2,double y2 ){
 	if(aggregat.compare("NO")==0){
 		board.setLineWidth(0.5);
 		board.drawArrow(x1,y1, x2,y2);
 	}else{
-		float tmpX1, tmpY1, a, b, tmpX2, tmpY2;
-		a=(y2-y1)/(x2-x1);
-		b=y1-(a*x1);
+		double centreX, centreY,tmpX1, tmpY1, a, b, tmpX2, tmpY2;
+		
 		board.setLineWidth(1);
-		tmpX1=(x1+x2)/2; 
-		tmpY1=(y1+y2)/2; 
-		if (y2<y1){
-			tmpY2=tmpY1-1.5;
-			tmpX2=(tmpY2-b)/a;		
-			board.drawText(tmpX1-(aggregat.length()/2)+.4, tmpY1-0.3, aggregat);
-			board.drawRectangle(tmpX1-(aggregat.length()/2), tmpY2, aggregat.length(), 1.5);
-		}else if (y1<y2){
-			tmpY2=tmpY1+1.5;
-			tmpX2=(tmpY2-b)/a;		
-			board.drawText(tmpX1-(aggregat.length()/2)+.4, tmpY2-0.3, aggregat);
-			board.drawRectangle(tmpX1-(aggregat.length()/2), tmpY1, aggregat.length(), 1.5);
+		centreX=(x1+x2)/2; 
+		centreY=(y1+y2)/2; 
+		board.setFontSize(12);
 
+		if (x1==x2){
+			tmpX1=centreX; tmpX2=centreX;
+			if (y1<y2){ tmpY1=centreY-.75;  tmpY2=centreY+.75; }
+			else{tmpY2=centreY-.75;  tmpY1=centreY+.75;}
+		}else {
+			a=(y2-y1)/(x2-x1);
+			b=y1-(a*x1);
+			if (std::abs(a)<.35 && std::abs(a)>0) {
+				if (x1>x2) { 
+					tmpX1=centreX+(aggregat.length()/2);  
+					tmpY1=a*tmpX1+b;
+					tmpX2=centreX-(aggregat.length()/2);  
+					tmpY2=a*tmpX2+b;
+				}else {
+					tmpX1=centreX-(aggregat.length()/2);  
+					tmpY1=a*tmpX1+b;
+					tmpX2=centreX+(aggregat.length()/2);  
+					tmpY2=a*tmpX2+b;
+				}
+			}else{
+				if (y1==y2){ tmpX1=centreX-(aggregat.length()/2);  tmpX2=centreX+(aggregat.length()/2);tmpY1=centreY; tmpY2=centreY;}
+				else if (y1>y2) { 
+					tmpY1=centreY+.75;  
+					tmpX1=(tmpY1-b)/a;
+					tmpY2=centreY-.75;  
+					tmpX2=(tmpY2-b)/a;
+				}else {
+					tmpY1=centreY-.75;  
+					tmpX1=(tmpY1-b)/a;
+					tmpY2=centreY+.75;  
+					tmpX2=(tmpY2-b)/a;
+				}
+			}
 		}
+			
+		board.drawRectangle(centreX-(aggregat.length()/2), centreY+0.75, aggregat.length(), 1.5);
+		board.drawText(centreX-(aggregat.length()/2)+.2, centreY-0.4, aggregat);
 		board.drawLine(x1,y1,tmpX1, tmpY1);
 		board.drawArrow(tmpX2, tmpY2, x2,y2);
 	}
-	
+	board.setFontSize(14);
+
 	
 }
 
@@ -449,8 +527,13 @@ void PRMDisplay::display(const std::string& path, const std::string& name){
 	completepath.append("\\");
 	completepath.append(name);
 	//completepath.append(".svg");
-	board.saveSVG(completepath.append(".svg").c_str(),4000,4000);
-	//board.saveFIG(completepath.append(".fig").c_str(),Board::BoundingBox, 10.0);
+	//board.translate(5,5);
+	std::vector<double> sizeXY;
+	sizeXY=displaySize();
+	std::cout <<sizeXY[0]<<","<<sizeXY[1]<<std::endl;
+	board.saveSVG(completepath.append(".svg").c_str(),200,200);
+	//board.saveFIG(completepath.append(".fig").c_str(),200,200, 10.0);
+	//board.saveFIG(completepath.append(".eps").c_str(),200,200, 10.0);
 }
 
 void PRMDisplay::RBNToGraph(const double attributeWeight, const double FKWeight) {

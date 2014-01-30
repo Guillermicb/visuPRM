@@ -17,20 +17,45 @@
 #include <sstream>
 #include <string>
 #include "Board.h"
-
+#include <RBN.h>
+#include "Consts.h"
+#include "RBNGenerateSchema.h"
+#include "RBNGenerateDependencies.h"
+#include "RBNGenerateParameters.h"
+#include "Object.h"
+#include <pl.h>
+#include "RelationalSchema.h"
 
 using namespace std;
 using namespace LibBoard;
 
+using namespace std;
+
 int main(int argc, char **argv) {
-		
-	// variable definition
+	/*
+	//(Anthony) First optional argument is now the google test ::testing::FLAGS_gtest_filter
+	//			Allows to locally update the GTest filter without globally updating the code
+	if(argc > 1){
+		::testing::FLAGS_gtest_filter = argv[1];
+	}
+
+	::testing::InitGoogleTest(&argc, argv);
+	int res;
+	try {
+		res = RUN_ALL_TESTS();
+	}
+	catch (std::exception &ex) 	{
+		cerr << ex.what() << endl;
+	}*/
+
+	////// variable definition
 		boost::shared_ptr<prm::RBN> rbnTest;
 		Graph graph;
 		float compt=0.0;
 		prm::PRMDisplay* prmdisplay;
-	///PRM definition
 
+	////// generate PRMs
+		/*
 		//// A = Relational Schema definition
 
 			/// A1 - Descriptive Attributes
@@ -125,84 +150,62 @@ int main(int argc, char **argv) {
 			rbnTest->setParents("Student.Ranking",		"MODE(~Registration.Student>Registration.Grade)");
 			rbnTest->setParents("Registration.Satisfaction", "Registration.Course>Course.Instructor>Professor.TeachingAbility, Registration.Grade");
 			
-			/// B3 - Set Probabilities associated to nodes dependencies
-			/*plProbValue probas1[] = {0.33, 0.34, 0.33, 0.65, 0.25, 0.1, 0.85, 0.1, 0.05, 0.05, 0.10, 0.85, 0.1, 0.25, 0.65, 0.33, 0.34, 0.33};
-			rbnTest->setDistributionTable("Registration.Satisfaction", rbnTest->getParents("Registration.Satisfaction"), initVector(probas1, 18));
-
-			plProbValue probas2[] = {0.3, 0.6, 0.1, 0.8, 0.1, 0.1, 0.1, 0.5, 0.4, 0.5, 0.4, 0.1};
-			rbnTest->setDistributionTable("Registration.Grade", rbnTest->getParents("Registration.Grade"), initVector(probas2, 12));
-
-			plProbValue probas3[] = {0.333, 0.334, 0.333, 0.01, 0.19, 0.8, 0.2, 0.4, 0.4, 0.8, 0.19, 0.01};
-			rbnTest->setDistributionTable("Course.Rating", rbnTest->getParents("Course.Rating"), initVector(probas3, 12));
-
-			plProbValue probas4[] = {0.333, 0.334, 0.333, 0.1, 0.2, 0.7, 0.2, 0.4, 0.4, 0.6, 0.3, 0.1};
-			rbnTest->setDistributionTable("Student.Ranking", rbnTest->getParents("Student.Ranking"), initVector(probas4, 12));
-
-			plProbValue probas5[] = {0.75, 0.25, 0.25, 0.75};
-			rbnTest->setDistributionTable("Professor.Popularity", rbnTest->getParents("Professor.Popularity"), initVector(probas5, 4));
-
-			plProbValue probas6[] = {0.75, 0.25, 0.25, 0.75};
-			rbnTest->setDistributionTable("Professor.Popularity", rbnTest->getParents("Professor.Popularity"), initVector(probas5, 4));
-			
-			rbnTest->setUniformDistribution("Student.Intelligence");
-			rbnTest->setUniformDistribution("Course.Difficulty");
-			rbnTest->setUniformDistribution("Professor.TeachingAbility");
 		*/
-
-	// Displaying
-	double indice =3;
+		//1. First we have to generate the relational schema, the only needed parameter is the number of classes.
+		RBNGenerateSchema gs(6);
+		boost::shared_ptr<prm::RelationalSchema> schema=gs.generateSchema();
+		
+		//2. From this generated schema we will create an RBN object
+		rbnTest=boost::shared_ptr<prm::RBN>(new prm::RBN(*(schema.get())));
+		rbnTest->init();
+		
+		//3. We generate dependencies, the generate method has as parameters:
+				//generates dependencies from max slot chain length= maxSlotChainLength
+				//maximum induced Width=maxInducedWidth
+				//maxParentsPerNode is the maximun number of parents per node, default 3
+				//maxDepNumber is the maximum number of allowed relational dependencies, default 15
+		RBNGenerateDependencies gd(rbnTest);
+		gd.generate(3,2,4);
+		
+		//4. We finally add CPDs:
+		RBNGenerateParameters gp(rbnTest);
+		gp.computeAllCPTs();
+		
+	////// Displaying
+	double indice=3;
 	std::string mySvgFile, tmp = "";
 	//for(int i=0;i<7;i++){
-//Etape 1: création du graphe de contrainte
+///Etape 1: création du graphe de contrainte
 		mySvgFile = "test";
 		//tmp = boost::lexical_cast<std::string>(i);
 		mySvgFile.append(tmp);
 		std::cout << "Graphe de contrainte\n";
 		prmdisplay=new prm::PRMDisplay(rbnTest,graph); 
-		prmdisplay->RBNToGraph_preComputedClassVertex(1,indice);
+		prmdisplay->RBNToGraph_ArtificialClassVertex(1,indice,indice);
 
-	// Etape 2: algorithme de placement
+	/// Etape 2: algorithme de placement
 		std::cout << "Application Kamada\n";
 		prmdisplay->usedKamada(50.0);
-		std::cout << "score de croisement " << prmdisplay->getCrossingScore() << std::endl;
+		//std::cout << "score de croisement " << prmdisplay->getCrossingScore() << std::endl;
 	
-	// Etape 3: Création graphique
-		std::cout << "Coordinates\n";
-	
-		prmdisplay->placeVertex();
-		std::cout << "relation\n";
-		prmdisplay->placeRelationnalLink(); 
-		std::cout << "pro\n";
-		prmdisplay->placeProbabilistLink();
+	/// Etape 3: Création graphique
+		prmdisplay->placeVertex(255, 0,0);
+		prmdisplay->placeClasse(0,0,255);
+		prmdisplay->placeRelationnalLink(0,0,255); 
+		prmdisplay->placeProbabilistLink(255,0,0);
 
 
-	// Etape 4: Affichage en image vectorielle
-		std::cout << "Save file\n";
-		prmdisplay->display("C:/Users/Arrizh/Desktop/testPred", mySvgFile);
+	/// Etape 4: Affichage en image vectorielle
+		std::cout<<"affichage";
+		prmdisplay->display("C:/Users/Pierre/Desktop/testPred", mySvgFile);
 		
 		//delete prmdisplay;
 		indice += .5;
 		//prmdisplay->~PRMDisplay();
 	//}
-	
 
-	//(Anthony) First optional argument is now the google test ::testing::FLAGS_gtest_filter
-	//			Allows to locally update the GTest filter without globally updating the code
-	/*if(argc > 1){
-		::testing::FLAGS_gtest_filter = argv[1];
-	}
 
-	::testing::InitGoogleTest(&argc, argv);
-	int res;
-	try {
-		res = RUN_ALL_TESTS();
-	}
-	catch (std::exception &ex) 	{
-		cerr << ex.what() << endl;
-	}*/
 	system("PAUSE");
-	
-
 	return 0;
 }
 
