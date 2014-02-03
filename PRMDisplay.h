@@ -77,13 +77,13 @@ namespace prm{
 		double delta; // espace entre les attributs et le rectangle de la classe
 
 		// Functions
-		void adjustDisplayAfterKamada(const double lenght);
+		void adjustDisplayAfterKamada();
 		void displayKamadaCheck(bool);
 		void addVertex(const std::string&, std::map<std::string, VertexDescriptor>&);
 		void addVertex(const std::string&, std::map<std::string, VertexDescriptor>&, Graph& myGraph, PositionMap&);
 		void addForeignKeyEdges_multiConnectedAttributs(std::map<std::string, VertexDescriptor>&, const double edgeWweight);
 		void addForeignKeyEdges_artificialClassVertex(std::map<std::string, VertexDescriptor>&, const double edgeWweight);
-		void addForeignKeyEdges_artificialClassVertex(std::map<std::string, VertexDescriptor>&, const std::map<std::string, std::pair<double, double>>&);
+		void addForeignKeyEdges_artificialClassVertex(std::map<std::string, VertexDescriptor>&, const std::map<std::string, double>&);
 		void addProbabilistLink(std::map<std::string, VertexDescriptor>&, const double edgeWweight);
 		bool checkFkPkAttribute(const std::string&,const std::string&);
 		void drawRelationnalLink(int nbCoude, double x1,double y1,double x2,double y2 );
@@ -92,8 +92,9 @@ namespace prm{
 		Points& reversePointCoordinate(Points&);
 		std::map<std::string, unsigned int> computeProbabilisticConnection();
 		std::string concat2SortedClass(std::string, std::string);
-		void prevKamada(const double sideLenght, Graph& myGraph, PositionMap&);
-		double computeEdgeWeight(const std::string&, const std::string&, const std::map<std::string, std::pair<double, double>>&);
+		void usedKamadaWithoutCircleLayoutInit(const double sideLenght);
+		double computeEdgeWeight(const std::string&, const std::string&, const std::map<std::string, double>&);
+		void addAttributes(std::map<std::string, VertexDescriptor>&, const double, std::map<std::string, double>);
 
 		/*!
 		 * \return width and height from the graph bounding box
@@ -140,7 +141,7 @@ namespace prm{
 		void RBNToGraph(const double attributeWeight, const double FKWeight);
 		void RBNToGraph_AllAttributsConnected(const double attributeWeight, const double FKWeight, const double probWeight);
 		void RBNToGraph_ArtificialClassVertex(const double attributeWeight, const double FKWeight, const double probWeight);
-		void RBNToGraph_preComputedClassVertex(const double attributeWeight, const double probWeight);
+		void RBNToGraph_preComputedClassVertex(const double sideLength, const double attributeWeight, const double probWeight);
 		void usedKamada(const double sideLenght);
 		double distanceBetweenDot(double x1,double y1,double x2,double y2);
 		inline double  min(double a,double b){return a<b?a:b;}

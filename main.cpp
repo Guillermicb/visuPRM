@@ -55,7 +55,7 @@ int main(int argc, char **argv) {
 		prm::PRMDisplay* prmdisplay;
 
 	////// generate PRMs
-		/*
+	/*	
 		//// A = Relational Schema definition
 
 			/// A1 - Descriptive Attributes
@@ -150,7 +150,7 @@ int main(int argc, char **argv) {
 			rbnTest->setParents("Student.Ranking",		"MODE(~Registration.Student>Registration.Grade)");
 			rbnTest->setParents("Registration.Satisfaction", "Registration.Course>Course.Instructor>Professor.TeachingAbility, Registration.Grade");
 			
-		*/
+		/*/
 		//1. First we have to generate the relational schema, the only needed parameter is the number of classes.
 		RBNGenerateSchema gs(6);
 		boost::shared_ptr<prm::RelationalSchema> schema=gs.generateSchema();
@@ -170,7 +170,7 @@ int main(int argc, char **argv) {
 		//4. We finally add CPDs:
 		RBNGenerateParameters gp(rbnTest);
 		gp.computeAllCPTs();
-		
+
 	////// Displaying
 	double indice=3;
 	std::string mySvgFile, tmp = "";
@@ -181,23 +181,28 @@ int main(int argc, char **argv) {
 		mySvgFile.append(tmp);
 		std::cout << "Graphe de contrainte\n";
 		prmdisplay=new prm::PRMDisplay(rbnTest,graph); 
-		prmdisplay->RBNToGraph_ArtificialClassVertex(1,indice,indice);
-
+		prmdisplay->RBNToGraph_preComputedClassVertex(50.0,1.0,indice);
+		//prmdisplay->RBNToGraph_ArtificialClassVertex(1.0,indice,indice);
+		//prmdisplay->usedKamada(50.0);
 	/// Etape 2: algorithme de placement
 		std::cout << "Application Kamada\n";
-		prmdisplay->usedKamada(50.0);
+		
 		//std::cout << "score de croisement " << prmdisplay->getCrossingScore() << std::endl;
 	
 	/// Etape 3: Création graphique
 		prmdisplay->placeVertex(255, 0,0);
+		std::cout << "placeVertex done" << std::endl;
 		prmdisplay->placeClasse(0,0,255);
+		std::cout << "placeClasse done" << std::endl;
 		prmdisplay->placeRelationnalLink(0,0,255); 
+		std::cout << "placeRelationnalLink done" << std::endl;
 		prmdisplay->placeProbabilistLink(255,0,0);
-
+		std::cout << "placeProbabilistLink done" << std::endl;
+		
 
 	/// Etape 4: Affichage en image vectorielle
 		std::cout<<"affichage";
-		prmdisplay->display("C:/Users/Pierre/Desktop/testPred", mySvgFile);
+		prmdisplay->display("C:/Users/Arrizh/Desktop/testPred", mySvgFile);
 		
 		//delete prmdisplay;
 		indice += .5;

@@ -1,4 +1,3 @@
-
 #include "PRMDisplay.h"
 #include "RBN.h"
 #include <Shapes.h>
@@ -14,7 +13,7 @@ PRMDisplay::PRMDisplay(const boost::shared_ptr<prm::RBN> rbn, const Graph& graph
 	board.setFontSize(14);
 	board.setPenColorRGBi( 255, 0, 0);
 	board.setLineWidth(0.5);
-
+	//lengthmap=boost::get(&VertexProperties::length, graph);
 	delta=1.0;
 	
 }
@@ -38,27 +37,24 @@ std::vector<double> PRMDisplay::displaySize(){
 void PRMDisplay::placeVertex(int red, int green, int blue){
 	std::map<std::string, Color> colorclasse; 
 	int nbclasse=5;
+	lengthmap=boost::get(&VertexProperties::length, graph);
 	srand( static_cast<unsigned int>( time(0) ) );
 	boost::graph_traits<Graph>::vertex_iterator i, end;
     for (boost::tie(i, end) = boost::vertices(graph); i != end; ++i) {
-        std::cout << "ID: (" << vertexIdPropertyMap[*i] << ") x: " << positionMap[*i][0] << " y: " << positionMap[*i][1] << "\n";
-		std::string classename=vertexIdPropertyMap[*i].substr(0,vertexIdPropertyMap[*i].find("."));
-		std::string attribute=vertexIdPropertyMap[*i].substr(vertexIdPropertyMap[*i].find(".")+1, vertexIdPropertyMap[*i].length());
-		// couleur
-		//makeVertexColor(classename);
-		if (attribute.length()<=7){
-			lengthmap[*i]=attribute.length()/1.35f;
-		}else{
-			lengthmap[*i]=attribute.length()/1.65f;
-		}
+
 		if (vertexIdPropertyMap[*i].find(".")!=std::string::npos) {
-			//if (checkFkPkAttribute(classename, attribute)){
-					//board.setPenColorRGBi( 255, 255, 255);
-					//board.fillEllipse(positionMap[*i][0]+lengthmap[*i]/2, positionMap[*i][1]+0.75, lengthmap[*i]/2	, 1, 3 );
-					board.setPenColorRGBi(red, green, blue);
-					board.drawText(positionMap[*i][0]+1,positionMap[*i][1]+.5, vertexIdPropertyMap[*i].substr(vertexIdPropertyMap[*i].find(".")+1, vertexIdPropertyMap[*i].length()), 15000 );
-					lengthmap[*i]+=1;
-					board.drawEllipse(positionMap[*i][0]+lengthmap[*i]/2, positionMap[*i][1]+0.75, lengthmap[*i]/2	, 1 );
+				//std::cout << "ID: (" << vertexIdPropertyMap[*i] << ") x: " << positionMap[*i][0] << " y: " << positionMap[*i][1] << "\n";
+				std::string classename=vertexIdPropertyMap[*i].substr(0,vertexIdPropertyMap[*i].find("."));
+				std::string attribute=vertexIdPropertyMap[*i].substr(vertexIdPropertyMap[*i].find(".")+1, vertexIdPropertyMap[*i].length());
+				if (attribute.length()<=7){
+					lengthmap[*i]=attribute.length()/1.35f;
+				}else{
+					lengthmap[*i]=attribute.length()/1.65f;
+				}
+				board.setPenColorRGBi(red, green, blue);
+				board.drawText(positionMap[*i][0]+1,positionMap[*i][1]+.5, vertexIdPropertyMap[*i].substr(vertexIdPropertyMap[*i].find(".")+1, vertexIdPropertyMap[*i].length()), 15000 );
+				lengthmap[*i]+=1;
+				board.drawEllipse(positionMap[*i][0]+lengthmap[*i]/2, positionMap[*i][1]+0.75, lengthmap[*i]/2	, 1 );
 					
 
 					//board.drawRectangle(positionMap[*i][0],positionMap[*i][1],lengthmap[*i],1.5 );
@@ -531,7 +527,13 @@ void PRMDisplay::display(const std::string& path, const std::string& name){
 	std::vector<double> sizeXY;
 	sizeXY=displaySize();
 	std::cout <<sizeXY[0]<<","<<sizeXY[1]<<std::endl;
-	board.saveSVG(completepath.append(".svg").c_str(),200,200);
+	if (sizeXY[1]>50 && sizeXY[1]<80){
+		board.saveSVG(completepath.append(".svg").c_str(),200,200);
+	}else if(sizeXY[1]<=50){
+		board.saveSVG(completepath.append(".svg").c_str(),150,150);
+	}else {
+		board.saveSVG(completepath.append(".svg").c_str(),300,300);
+	}
 	//board.saveFIG(completepath.append(".fig").c_str(),200,200, 10.0);
 	//board.saveFIG(completepath.append(".eps").c_str(),200,200, 10.0);
 }
@@ -598,21 +600,21 @@ void PRMDisplay::RBNToGraph(const double attributeWeight, const double FKWeight)
 	}
 }
 
-void PRMDisplay::prevKamada(const double edgelength, Graph& g, PositionMap& position){
+void PRMDisplay::usedKamadaWithoutCircleLayoutInit(const double sideLength){
 	boost::minstd_rand gen;
-	Topology topology(gen, edgelength*5);
+	Topology topology(gen, sideLength);
 
-	WeightPropertyMap weightPropertyMap = boost::get(&EdgeProperty::weight, g);
-	boost::circle_graph_layout(g, position, edgelength*5);
+	WeightPropertyMap weightPropertyMap = boost::get(&EdgeProperty::weight, graph);
 	
-	bool result = boost::kamada_kawai_spring_layout(g, 
-                                       position,
+	bool result = boost::kamada_kawai_spring_layout(graph, 
+                                       positionMap,
                                        weightPropertyMap,
 									   topology,
-                                       edge_length(edgelength),
+                                       side_length(sideLength),
 									   boost::layout_tolerance<>());
 	
 	displayKamadaCheck(result);
+	adjustDisplayAfterKamada();
 }
 
 void PRMDisplay::usedKamada(const double sidelength){
@@ -630,7 +632,7 @@ void PRMDisplay::usedKamada(const double sidelength){
 									   boost::layout_tolerance<>());
 	
 	displayKamadaCheck(result);
-	adjustDisplayAfterKamada(sidelength);
+	adjustDisplayAfterKamada();
 }
 
 std::pair<Points, Points> PRMDisplay::getExtremGraphPoint(Graph& g){
@@ -649,7 +651,7 @@ std::pair<Points, Points> PRMDisplay::getExtremGraphPoint(Graph& g){
 	return std::pair<Points, Points>(min_point, max_point);
 }
 
-void PRMDisplay::adjustDisplayAfterKamada(const double length){
+void PRMDisplay::adjustDisplayAfterKamada(){
 	boost::graph_traits<Graph>::vertex_iterator i, end;
 	Points min_point;
 	const int margin = 5;
@@ -702,13 +704,21 @@ void PRMDisplay::RBNToGraph_AllAttributsConnected(const double attributeWeight, 
 
 void PRMDisplay::addVertex(const std::string& verticeName, std::map<std::string, VertexDescriptor>& container){
 	positionMap = boost::get(&VertexProperties::point, graph);
-	addVertex(verticeName, container, graph, positionMap);
+	VertexDescriptor vd;
+
+	vertexIdPropertyMap = boost::get(&VertexProperties::index, graph);
+	
+	vd = boost::add_vertex(graph);
+	vertexIdPropertyMap[vd] = verticeName;
+	positionMap[vd][0]=1;
+	positionMap[vd][1]=1;
+	container[verticeName] = vd;
 }
 
 void PRMDisplay::addVertex(const std::string& verticeName, std::map<std::string, VertexDescriptor>& container, Graph& g, PositionMap& position){
 	VertexDescriptor vd;
 	vertexIdPropertyMap = boost::get(&VertexProperties::index, g);
-	lengthmap = boost::get(&VertexProperties::length, g);
+	//lengthmap = boost::get(&VertexProperties::length, g);
 	vd = boost::add_vertex(g);
 	vertexIdPropertyMap[vd] = verticeName;
 	position[vd][0]=1;
@@ -851,52 +861,55 @@ void PRMDisplay::addForeignKeyEdges_artificialClassVertex(std::map<std::string, 
 		attrFrom.append(refSlotIterator->second.first.getName());
 		
 		boost::add_edge(verticeContainer[classFrom], verticeContainer[classTo], EdgeProperty(edgeWeight), graph);
-		//boost::add_edge(verticeContainer[attrFrom], verticeContainer[classTo], EdgeProperty(edgeWweight), graph);
 	}
 }
 
-void PRMDisplay::RBNToGraph_preComputedClassVertex(const double attributeWeight, const double probWeight){
+void PRMDisplay::RBNToGraph_preComputedClassVertex(const double sideLength, const double attributeWeight, const double probWeight){
 	/*rechercher toutes classes et tous les attributs*/
-	std::map<std::string, VertexDescriptor> verticeContainer, facticeContainer;
+	std::map<std::string, VertexDescriptor> verticeContainer;
 	RelationalSchema schema = rbn->getSchema();
 	std::vector<std::string> classnames = schema.getClassNames();
 	std::vector<std::string> attributnames;
 	std::string verticeName;
-	std::map<std::string, std::pair<double, double>> boundingLengths;
-	Graph* aClass;
-	PositionMap position;
+	std::map<std::string, double> boundingLength;
+	int i,j = 0;
 
+	/*Ajout des sommets factices de classe*/
 	for(std::vector<std::string>::iterator classsNameIterator = classnames.begin(); classsNameIterator != classnames.end(); ++classsNameIterator){
-		aClass = new Graph();
-		position = boost::get(&VertexProperties::point, *aClass);
-
 		attributnames = schema.getClass(*classsNameIterator).getAttributeNames();
-		addVertex(*classsNameIterator, facticeContainer, *aClass, position);
 		addVertex(*classsNameIterator, verticeContainer);
-		
+		i=0;
+		j++;
 		for(std::vector<std::string>::iterator attributNameIterator = attributnames.begin(); attributNameIterator != attributnames.end(); ++attributNameIterator ){
-			verticeName = *classsNameIterator;
-			verticeName.append(".");
-			verticeName.append(*attributNameIterator);
-			
 			if (checkFkPkAttribute(*classsNameIterator, *attributNameIterator)){
-				addVertex(verticeName, facticeContainer, *aClass, position);
-				addVertex(verticeName, verticeContainer);
-				boost::add_edge(facticeContainer[*classsNameIterator], facticeContainer[verticeName], EdgeProperty(attributeWeight), *aClass);
-				boost::add_edge(verticeContainer[*classsNameIterator], verticeContainer[verticeName], EdgeProperty(attributeWeight), graph);
+				i++;
 			}
 		}
-		prevKamada(1., *aClass, position);
-		boundingLengths[*classsNameIterator] = computeBoundingLength(*aClass);
-		
-		delete aClass;
+		boundingLength[*classsNameIterator] = static_cast<double>(i*2.);
 	}
-
-	addForeignKeyEdges_artificialClassVertex(verticeContainer, boundingLengths);
+	/*ajout des liens relationnels avec un poids qui dépend de la taille de la classe*/
+	addForeignKeyEdges_artificialClassVertex(verticeContainer, boundingLength);
+	/*application de Kamada*/
+	usedKamada(static_cast<double>(j*10));
+	/*ajout des attributs de chaque classe*/
+	addAttributes(verticeContainer, attributeWeight, boundingLength);
+	/*ajout des liens probabilistes*/
 	addProbabilistLink(verticeContainer, probWeight);
+	/*application du second Kamada sans initialisation en circleTopology*/
+	usedKamadaWithoutCircleLayoutInit(static_cast<double>(j*10));
+	
+	vertexIdPropertyMap = boost::get(&VertexProperties::index, graph);
+	/*debug/*
+	boost::graph_traits<Graph>::vertex_iterator iterator, end;
+	
+	for(boost::tie(iterator, end) = vertices(graph);iterator != end; iterator++){
+		std::cout << vertexIdPropertyMap[*iterator] << " x=" << positionMap[*iterator][0] << " y=" << positionMap[*iterator][1] << std::endl;
+	}
+	system("PAUSE");
+	/*fin debug*/
 }
 
-void PRMDisplay::addForeignKeyEdges_artificialClassVertex(std::map<std::string, VertexDescriptor>& verticeContainer, const std::map<std::string, std::pair<double, double>>& boundingLength){
+void PRMDisplay::addForeignKeyEdges_artificialClassVertex(std::map<std::string, VertexDescriptor>& verticeContainer, const std::map<std::string, double>& boundingLength){
 	RefSlotsMultimap foreignKeys = rbn->getSchema().getRefSlots();
 	std::string classFrom, classTo, attrFrom;
 	double edgeWeight = 0;
@@ -906,37 +919,64 @@ void PRMDisplay::addForeignKeyEdges_artificialClassVertex(std::map<std::string, 
 		classTo = refSlotIterator->second.second->getName();
 
 		edgeWeight = computeEdgeWeight(classFrom, classTo, boundingLength);
-		
 		boost::add_edge(verticeContainer[classFrom], verticeContainer[classTo], EdgeProperty(edgeWeight), graph);
 	}
 }
 
-double PRMDisplay::computeEdgeWeight(const std::string& classFrom, const std::string& classTo, const std::map<std::string, std::pair<double, double>>& boundingLength){
-	double classFromWidth, classFromHeight, classToWidth, classToHeight, ab, ac = 0.0 ;
+double PRMDisplay::computeEdgeWeight(const std::string& classFrom, const std::string& classTo, const std::map<std::string, double>& boundingLength){
+	double classFromLength, classToLength = 0.0 ;
 	std::pair<double, double> classFromLengths, classToLengths;
 	const double margin = delta;
 
-	classFromWidth = boundingLength.at(classFrom).first;
-	classFromHeight = boundingLength.at(classFrom).second;
-	classToWidth = boundingLength.at(classTo).first;
-	classToHeight = boundingLength.at(classTo).second;
+	classFromLength = boundingLength.at(classFrom) / 2;
+	classToLength = boundingLength.at(classTo) / 2;
+	
+	
 
-	ab = ( classFromHeight + classToHeight + margin ) / 2.;
-	ac = ( classFromHeight + classToHeight + margin ) / 2.;
-
-	return sqrt( ab * ab + ac * ac );
+	return sqrt( 2 * std::pow((classFromLength / 2. + margin + classToLength / 2.),2) );
 	
 }
 
-std::pair<double, double> PRMDisplay::computeBoundingLength(Graph& g){
-	Points minPoint, maxPoint;
-	double width, height;
-	boost::tie(minPoint, maxPoint) = getExtremGraphPoint(g);
-	std::cout << minPoint[0] << " " << minPoint[1] << " " << maxPoint[0] << " " << maxPoint[1] << std::endl;
-	width = maxPoint[0] - minPoint[0] + delta;
-	height = maxPoint[1] - minPoint[1] + delta;
+void PRMDisplay::addAttributes(std::map<std::string, VertexDescriptor>& verticeContainer, const double attributeWeight, std::map<std::string, double> boundingLength){
+	RelationalSchema schema = rbn->getSchema();
+	std::vector<std::string> classnames = schema.getClassNames();
+	std::vector<std::string> attributnames;
+	std::string verticeName;
+	std::map<std::string, VertexDescriptor> facticeContainer;
+	VertexDescriptor vd, fvd, classVd;
+	PositionMap position;
+	Graph* g;
+	boost::graph_traits<Graph>::vertex_iterator iterator, end;
+	vertexIdPropertyMap = boost::get(&VertexProperties::index, graph);
 
-	return std::pair<double, double>(width, height);
+	/*Ajout des sommets factices de classe*/
+	for(std::vector<std::string>::iterator classsNameIterator = classnames.begin(); classsNameIterator != classnames.end(); ++classsNameIterator){
+		attributnames = schema.getClass(*classsNameIterator).getAttributeNames();
+		g = new Graph;
+		position = boost::get(&VertexProperties::point, *g);
+		for(std::vector<std::string>::iterator attributNameIterator = attributnames.begin(); attributNameIterator != attributnames.end(); ++attributNameIterator ){
+			verticeName = *classsNameIterator;
+			verticeName.append(".");
+			verticeName.append(*attributNameIterator);
+			if (checkFkPkAttribute(*classsNameIterator, *attributNameIterator)){
+				addVertex(verticeName, verticeContainer);
+				addVertex(verticeName, facticeContainer, *g, position);
+				boost::add_edge(verticeContainer[*classsNameIterator], verticeContainer[verticeName], EdgeProperty(attributeWeight), graph);
+				//boost::add_edge(verticeContainer[*classsNameIterator], verticeContainer[verticeName], EdgeProperty(attributeWeight), *g);
+			}
+		}
+		/*Positionnement des attributs en fonction de l'endroit ou est placé leur classe*/
+		boost::circle_graph_layout(*g, position, boundingLength[*classsNameIterator]/2);
+		for(boost::tie(iterator, end) = vertices(*g); iterator != end; iterator++ ){
+			vd = verticeContainer.at(vertexIdPropertyMap[*iterator]);
+			classVd = verticeContainer.at(*classsNameIterator);
+			fvd = *iterator;
+
+			positionMap[vd][0]= positionMap[classVd][0] + position[fvd][0];
+			positionMap[vd][1]= positionMap[classVd][1] + position[fvd][1];
+		}
+		delete g;
+	}
 }
 
 std::pair<Points, Points> PRMDisplay::getEdgeCoordinates(boost::graph_traits<Graph>::edge_iterator edgeIterator){
