@@ -54,13 +54,13 @@ typedef boost::property_map<Graph, double EdgeProperty::*>::type WeightPropertyM
 typedef boost::graph_traits<Graph>::vertex_descriptor VertexDescriptor;
 
 
-typedef struct RectClass {
+typedef struct {
 	double x; 
 	double y; 
 	double len;
 	double hei;
 	std::string classeName;
-};
+}  RectClass;
 
 namespace prm{
 
@@ -79,12 +79,22 @@ namespace prm{
 		// Functions
 		void adjustDisplayAfterKamada();
 		void displayKamadaCheck(bool);
+
 		void addVertex(const std::string&, std::map<std::string, VertexDescriptor>&);
 		void addVertex(const std::string&, std::map<std::string, VertexDescriptor>&, Graph& myGraph, PositionMap&);
+
 		void addForeignKeyEdges_multiConnectedAttributs(std::map<std::string, VertexDescriptor>&, const double edgeWweight);
 		void addForeignKeyEdges_artificialClassVertex(std::map<std::string, VertexDescriptor>&, const double edgeWweight);
 		void addForeignKeyEdges_artificialClassVertex(std::map<std::string, VertexDescriptor>&, const std::map<std::string, double>&);
-		void addProbabilistLink(std::map<std::string, VertexDescriptor>&, const double edgeWweight);
+		void addForeignKeyEdges_artificialClassVertex_NumberOfLinks(std::map<std::string, VertexDescriptor>&, const double edgeWweight, std::map<std::string, unsigned int>& probabilisticConnection);
+
+		void addProbabilistLink(std::map<std::string, VertexDescriptor>& verticeContainer, const double edgeWweight);
+
+		/*!
+		 * \brief use to add probabilistic link with the precomputed algorithms
+		 */
+		void addProbabilistLink(std::map<std::string, VertexDescriptor>& verticeContainer, const std::map<std::string, double>& probWeights);
+		void addProbabilistLink_NumberOfLinks(std::map<std::string, VertexDescriptor>& verticeContainer, const double edgeWweight, std::map<std::string, unsigned int>& probabilisticConnection);
 		bool checkFkPkAttribute(const std::string&,const std::string&);
 		void drawRelationnalLink(int nbCoude, double x1,double y1,double x2,double y2 );
 		void drawProbabilistLink(const std::string aggregat, double x1,double y1,double x2,double y2 );
@@ -95,6 +105,8 @@ namespace prm{
 		void usedKamadaWithoutCircleLayoutInit(const double sideLenght);
 		double computeEdgeWeight(const std::string&, const std::string&, const std::map<std::string, double>&);
 		void addAttributes(std::map<std::string, VertexDescriptor>&, const double, std::map<std::string, double>);
+		std::string getVertexClassName(std::string vertexName);
+		double computeNumberOfLinkWeight(double linkWeight, double numberOfLink);
 
 		/*!
 		 * \return width and height from the graph bounding box
@@ -141,7 +153,8 @@ namespace prm{
 		void RBNToGraph(const double attributeWeight, const double FKWeight);
 		void RBNToGraph_AllAttributsConnected(const double attributeWeight, const double FKWeight, const double probWeight);
 		void RBNToGraph_ArtificialClassVertex(const double attributeWeight, const double FKWeight, const double probWeight);
-		void RBNToGraph_preComputedClassVertex(const double sideLength, const double attributeWeight, const double probWeight);
+		void RBNToGraph_ArtificialClassVertex_NumberOfLink(const double attributeWeight, const double FKWeight, const double probWeight);
+		void RBNToGraph_PreComputedClassVertex(const double sideLength, const double attributeWeight, const double probWeight);
 		void usedKamada(const double sideLenght);
 		double distanceBetweenDot(double x1,double y1,double x2,double y2);
 		inline double  min(double a,double b){return a<b?a:b;}
