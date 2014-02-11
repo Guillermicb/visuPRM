@@ -88,6 +88,10 @@ namespace prm{
 		void addForeignKeyEdges_artificialClassVertex(std::map<std::string, VertexDescriptor>&, const std::map<std::string, double>&);
 		void addForeignKeyEdges_artificialClassVertex_NumberOfLinks(std::map<std::string, VertexDescriptor>&, const double edgeWweight, std::map<std::string, unsigned int>& probabilisticConnection);
 		
+		/*!
+		 *  \brief calculate the thickness of a probabilistic link. For the moment this function returns a random double between 0 and 2 
+		 */
+		double calculateEdgeThickness();
 		
 		/*!
 		 *  \brief draw a relationnal link with bends
@@ -143,8 +147,8 @@ namespace prm{
 		void addProbabilistLink(std::map<std::string, VertexDescriptor>& verticeContainer, const std::map<std::string, double>& probWeights);
 		void addProbabilistLink_NumberOfLinks(std::map<std::string, VertexDescriptor>& verticeContainer, const double edgeWweight, std::map<std::string, unsigned int>& probabilisticConnection);
 		bool checkFkPkAttribute(const std::string&,const std::string&);
-		void drawRelationnalLink(int nbCoude, double x1,double y1,double x2,double y2 );
-		void drawProbabilistLink(const std::string aggregat, double x1,double y1,double x2,double y2 );
+		
+	
 		std::pair<double, double> get2DLinearEquation(Points, Points) throw();
 		Points& reversePointCoordinate(Points&);
 		std::map<std::string, unsigned int> computeProbabilisticConnection();
