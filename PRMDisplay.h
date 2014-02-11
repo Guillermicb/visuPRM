@@ -87,12 +87,59 @@ namespace prm{
 		void addForeignKeyEdges_artificialClassVertex(std::map<std::string, VertexDescriptor>&, const double edgeWweight);
 		void addForeignKeyEdges_artificialClassVertex(std::map<std::string, VertexDescriptor>&, const std::map<std::string, double>&);
 		void addForeignKeyEdges_artificialClassVertex_NumberOfLinks(std::map<std::string, VertexDescriptor>&, const double edgeWweight, std::map<std::string, unsigned int>& probabilisticConnection);
+		
+		
+		/*!
+		 *  \brief draw a relationnal link with bends
+		 *	\param numCoude : a integer which represent the shape of the bends (cf functions)
+		 *	\param x1 : x coordinate of the origin of the line
+		 *	\param y1 : y coordinate of the origin of the line
+		 *  \param x2 : x coordinate of the end of the line
+		 *  \param y2 : y coordinate of the end of the line
+		 */
+		void drawRelationnalLink(int numCoude, double x1,double y1,double x2,double y2 );
 
+		/*!
+		 *  \brief draw a probabilist link link with bends
+		 *	\param aggregat : the aggregat of the link. If there is no aggregat the value is "NO"
+		 *	\param x1 : x coordinate of the origin of the arrow
+		 *	\param y1 : y coordinate of the origin of the arrow
+		 *  \param x2 : x coordinate of the end of the arrow
+		 *  \param y2 : y coordinate of the end of the arrow
+		 *	\param thickness: represent the thickness of the arrow calculate thnaks to the function calculateEdgeThickness();
+		 */
+		void drawProbabilistLink(const std::string aggregat, double x1,double y1,double x2,double y2,double thickness );
+
+		inline double  min(double a,double b){return a<b?a:b;}
+		inline double  max(double a,double b){return a>b?a:b;}
 		void addProbabilistLink(std::map<std::string, VertexDescriptor>& verticeContainer, const double edgeWweight);
 
 		/*!
-		 * \brief use to add probabilistic link with the precomputed algorithms
+		 *	\brief permits to draw the bounding rectangle of all the individuals which belong the same class.
+		 *	\param red : the red level of the bounding box color
+		 *	\param green : the green level of the bounding box color
+		 *	\param blue : the blue level of the bounding box color
 		 */
+		void drawClass(int red, int green, int blue);
+
+		/*!
+		 *	\brief Calculate the intersection between a ellipse and a line.
+		 *	\param axe1 : the big radius of the ellipse
+		 *	\param axe2 : the little radius of the ellipse
+		 *	\param x1 : x coordinate of the origin of the line
+		 *	\param y1 : y coordinate of the origin of the line
+		 *  \param x2 : x coordinate of the end of the line
+		 *  \param y2 : y coordinate of the end of the line
+		 *	\param extremite: the origin or the end of the line.
+		 *	\return: the x,y coordinates of the intersection's points 
+		 */
+		std::vector<double> intersectionEllispeLine(double axe1, double axe2, double x1, double y1, double x2, double y2, int extremite);
+
+		/*!
+		 *	\brief Calculate the size between the least and the utmost bounding on x and y.
+		 *	\retun : the size of the screen (x,y)
+		 */
+		std::vector<double> displaySize();
 		void addProbabilistLink(std::map<std::string, VertexDescriptor>& verticeContainer, const std::map<std::string, double>& probWeights);
 		void addProbabilistLink_NumberOfLinks(std::map<std::string, VertexDescriptor>& verticeContainer, const double edgeWweight, std::map<std::string, unsigned int>& probabilisticConnection);
 		bool checkFkPkAttribute(const std::string&,const std::string&);
@@ -131,23 +178,56 @@ namespace prm{
 	public:
 		
 		/*!
-		 * \brief Ctor.
-		 * \param schema : the RelationalSchema giving the domain and the structure of the problem to modelize
+		 *	\brief Ctor.
+		 *	\param rbn : the RBN object which contains all the information
+		 *	\param graph: the graph use by Kamada Kawai
 		 */
 		PRMDisplay();
 		PRMDisplay(const boost::shared_ptr<prm::RBN> rbn,const Graph& graph);
-		PRMDisplay(const boost::shared_ptr<prm::RBN> rbn, const PositionMap& postionMap, const VertexIndexPropertyMap& vertexNamemap,const Graph& graph);
-		PRMDisplay(const PositionMap& postionMap, const VertexIndexPropertyMap& vertexNamemap, const Graph& graph);
+
 
 		/*!
 		 * \brief Dtor.
 		 */
-		// ~PRMDisplay();
+		 ~PRMDisplay();
+
+		/*!
+		 *	\brief permits to place and draw thanks to the function drawVertex() all the vertex in the svg file.
+		 *	\param red : the red level of the vertex color
+		 *	\param green : the green level of the vertex color
+		 *	\param blue : the blue level of the vertex color
+		 */
 		void placeVertex(int red, int green, int blue);
+
+		/*!
+		 *	\brief permits to place and draw thanks to the function drawRelationnalLink() all the relational link in the svg file.
+		 *	\param red : the red level of the Relationnal Link color
+		 *	\param green : the green level of the Relationnal Link color
+		 *	\param blue : the blue level of the Relationnal Link color
+		 */
 		void placeRelationnalLink(int red, int green, int blue);
+
+		/*!
+		 *	\brief permits to place and draw thanks to the function drawProbabilistLink() all the probabilistic link in the svg file.
+		 *	\param red : the red level of the probabilistic link color
+		 *	\param green : the green level of the probabilistic link color
+		 *	\param blue : the blue level of the probabilistic link color
+		 */
 		void placeProbabilistLink(int red, int green, int blue);
+
+		/*!
+		 *	\brief permits to place and draw thanks to the function drawclass() all the bounding box in the svg files.
+		 *	\param red : the red level of the bounding box color
+		 *	\param green : the green level of the bounding box color
+		 *	\param blue : the blue level of the bounding box color
+		 */
 		void placeClasse(int red, int green, int blue);
-		//void makeVertexColor(const std::string& colorname);
+		
+		/*!
+		 *	\brief  Save the svg file.
+		 *	\param path : represent the path wher the file is saved
+		 *	\param name : represent the name of the path without the svg's extention
+		 */
 		void display(const std::string& path, const std::string& name);
 
 		void RBNToGraph(const double attributeWeight, const double FKWeight);
@@ -156,19 +236,13 @@ namespace prm{
 		void RBNToGraph_ArtificialClassVertex_NumberOfLink(const double attributeWeight, const double FKWeight, const double probWeight);
 		void RBNToGraph_PreComputedClassVertex(const double sideLength, const double attributeWeight, const double probWeight);
 		void usedKamada(const double sideLenght);
-		double distanceBetweenDot(double x1,double y1,double x2,double y2);
-		inline double  min(double a,double b){return a<b?a:b;}
-		inline double  max(double a,double b){return a>b?a:b;}
-		double minDistance4point(double a,double b,double c,double d );
-		void drawClass(int red, int green, int blue);
-		std::vector<double> intersectionEllispeLine(double axe1, double axe2, double x1, double y1, double x2, double y2, int extremite);
 
 		int getNbCrossing();
 		int getMaxCrossing();
 		double getCrossingScore();
 		void initGraph();
 		std::pair<Points, Points> getExtremGraphPoint(Graph&);
-		std::vector<double> displaySize();
+		
 
 	};
 

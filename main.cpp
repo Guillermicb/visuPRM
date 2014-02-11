@@ -53,13 +53,13 @@ int main(int argc, char **argv) {
 		Graph graph;
 		float compt=0.0;
 		prm::PRMDisplay* prmdisplay;
-
+		/*
 	////// generate PRMs
-	/*	
+		
 		//// A = Relational Schema definition
 
 			/// A1 - Descriptive Attributes
-
+		
 			//Satisfaction attribute
 			plIntegerType oneToThreeType(1, 3);
 			boost::shared_ptr<prm::Domain> satisfactionDomain = boost::shared_ptr<prm::Domain>();
@@ -149,9 +149,10 @@ int main(int argc, char **argv) {
 			rbnTest->setParents("Course.Rating",		"MODE(~Registration.Course>Registration.Satisfaction)");
 			rbnTest->setParents("Student.Ranking",		"MODE(~Registration.Student>Registration.Grade)");
 			rbnTest->setParents("Registration.Satisfaction", "Registration.Course>Course.Instructor>Professor.TeachingAbility, Registration.Grade");
-			
-		/*/
-		//1. First we have to generate the relational schema, the only needed parameter is the number of classes.
+			rbnTest->outputXML("C:/Users/Pierre/Desktop/testPred", "RBNStorage.xml");
+		
+		*/
+		//1. First we have to generate the relational schema, the only needed parameter is the number of clas*es.
 		RBNGenerateSchema gs(6);
 		boost::shared_ptr<prm::RelationalSchema> schema=gs.generateSchema();
 		
@@ -170,7 +171,7 @@ int main(int argc, char **argv) {
 		//4. We finally add CPDs:
 		RBNGenerateParameters gp(rbnTest);
 		gp.computeAllCPTs();
-
+		
 	////// Displaying
 	double indice=3;
 	std::string mySvgFile, tmp = "";
@@ -191,14 +192,10 @@ int main(int argc, char **argv) {
 	
 	/// Etape 3: Création graphique
 		prmdisplay->placeVertex(255, 0,0);
-		std::cout << "placeVertex done" << std::endl;
 		prmdisplay->placeClasse(0,0,255);
-		std::cout << "placeClasse done" << std::endl;
 		prmdisplay->placeRelationnalLink(0,0,255); 
-		std::cout << "placeRelationnalLink done" << std::endl;
 		prmdisplay->placeProbabilistLink(255,0,0);
-		std::cout << "placeProbabilistLink done" << std::endl;
-		
+
 
 	/// Etape 4: Affichage en image vectorielle
 		std::cout<<"affichage";
