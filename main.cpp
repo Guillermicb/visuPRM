@@ -182,9 +182,9 @@ int main(int argc, char **argv) {
 		mySvgFile.append(tmp);
 		std::cout << "Graphe de contrainte\n";
 		prmdisplay=new prm::PRMDisplay(rbnTest,graph); 
-		prmdisplay->RBNToGraph_preComputedClassVertex(50.0,1.0,indice);
-		//prmdisplay->RBNToGraph_ArtificialClassVertex(1.0,indice,indice);
-		//prmdisplay->usedKamada(50.0);
+		//prmdisplay->RBNToGraph_preComputedClassVertex(50.0,1.0,indice);
+		prmdisplay->RBNToGraph_ArtificialClassVertex(1.0,indice,indice);
+		prmdisplay->usedKamada(50.0);
 	/// Etape 2: algorithme de placement
 		std::cout << "Application Kamada\n";
 		
