@@ -4,6 +4,8 @@
 #include <Shapes.h>
 #include <sstream>
 
+#define PI 3.1415926535897932384626433832795
+
 
 using namespace LibBoard;
 using namespace prm;
@@ -17,6 +19,10 @@ PRMDisplay::PRMDisplay(const boost::shared_ptr<prm::RBN> rbn, const Graph& graph
 	
 	delta=1.0;
 	
+}
+
+PRMDisplay::~PRMDisplay(){
+
 }
 
 std::vector<double> PRMDisplay::displaySize(){
@@ -1104,11 +1110,11 @@ void PRMDisplay::addAttributes(std::map<std::string, VertexDescriptor>& verticeC
 	}
 }
 
-std::pair<Points, Points> PRMDisplay::getEdgeCoordinates(boost::graph_traits<Graph>::edge_iterator edgeIterator){
+std::pair<Points, Points> PRMDisplay::getEdgeCoordinates(boost::graph_traits<Graph>::edge_descriptor& edge){
 	Points beginPoint, endPoint;
 	
-	beginPoint = positionMap[boost::source(*edgeIterator, graph)];
-	endPoint  = positionMap[boost::target(*edgeIterator, graph)];
+	beginPoint = positionMap[boost::source(edge, graph)];
+	endPoint  = positionMap[boost::target(edge, graph)];
 
 	return std::pair<Points, Points>(beginPoint, endPoint);
 }
@@ -1153,18 +1159,23 @@ int PRMDisplay::getNbCrossing(){
 	Points beginPoint_edge1, endPoint_edge1, beginPoint_edge2, endPoint_edge2, tmp1, tmp2;
 	double a1, a2, b1, b2, xcommun;
 	VertexDescriptor v1,v2,v3,v4;
+	std::vector<boost::graph_traits<Graph>::edge_descriptor> edgesContainer;
+	std::vector<boost::graph_traits<Graph>::edge_descriptor>::iterator it1, it2, itEnd;
 
-	for(boost::tie(edgeIterator1, end) = boost::edges(graph); edgeIterator1 != boost::prior(end); edgeIterator1++){
-		boost::tie(beginPoint_edge1, endPoint_edge1) = getEdgeCoordinates(edgeIterator1); // arête à comparer avec le reste de la liste
-		
-		v1 = boost::source(*edgeIterator1, graph);
-		v2 = boost::target(*edgeIterator1, graph);
+	loadProbabilisticEdges(edgesContainer);
 
-		for (edgeIterator2 = boost::next(edgeIterator1) ; edgeIterator2 != end; edgeIterator2++) {
-			boost::tie(beginPoint_edge2, endPoint_edge2) = getEdgeCoordinates(edgeIterator2);
+	itEnd = edgesContainer.end();
+	for(it1 = edgesContainer.begin(); it1 != boost::prior(itEnd); it1++){
+
+		boost::tie(beginPoint_edge1, endPoint_edge1) = getEdgeCoordinates(*it1); // arête à comparer avec le reste de la liste
+
+		v1 = boost::source(*it1, graph);
+		v2 = boost::target(*it1, graph);
+		for(it2 = boost::next(it1); it2 != itEnd; it2++){
+			boost::tie(beginPoint_edge2, endPoint_edge2) = getEdgeCoordinates(*it2);
 			
-			v3 = boost::source(*edgeIterator2, graph);
-			v4 = boost::target(*edgeIterator2, graph);
+			v3 = boost::source(*it2, graph);
+			v4 = boost::target(*it2, graph);
 
 			if((v1 != v3) && (v1 != v4) && (v2 != v3) && (v2 != v4)){
 				//On veut connaitre les équations des 2 droites
@@ -1193,7 +1204,7 @@ int PRMDisplay::getNbCrossing(){
 						}
 					}
 				}
-			
+
 				//si a1 = a2 alors les segments ne se croisent pas.
 				if(a1 != a2) {
 					xcommun = (b2-b1)/(a1-a2);
@@ -1214,14 +1225,18 @@ int PRMDisplay::getMaxCrossing() {
 	n = boost::num_vertices(graph);
 	m = boost::num_edges(graph);
 	boost::graph_traits<Graph>::vertex_iterator iterator, end;
+	std::vector<boost::graph_traits<Graph>::edge_descriptor> edgesContainer;
+
+	loadProbabilisticEdges(edgesContainer);
 	
-	call = m*(m-1)/2;
-	cimpossible = 0;
-	for(boost::tie(iterator, end) = vertices(graph) ; iterator != end ; iterator++ ){
+	call = edgesContainer.size()*(edgesContainer.size()-1)/2;
+	cimpossible = 18; // résultat empirique de notre modèle de PRM, plus rapide à calculer visuellement que par algo.
+	/*for(boost::tie(iterator, end) = vertices(graph) ; iterator != end ; iterator++ ){
 		degree = boost::in_degree(*iterator, graph);
 		cimpossible +=  (degree * (degree-1));
-	}
+	}*/
 	cimpossible = cimpossible / 2;
+	std::cout << "maxcrossing :" << call - cimpossible << std::endl;
 	return call - cimpossible;
 
 }
@@ -1233,6 +1248,42 @@ double PRMDisplay::getCrossingScore(){
 	} else {
 		return 1.;
 	}
+}
+
+void PRMDisplay::loadProbabilisticEdges(std::vector<boost::graph_traits<Graph>::edge_descriptor>& edgesContainer){
+	vertexIdPropertyMap = boost::get(&VertexProperties::index, graph);
+	std::string vertexName, parentName;
+	prm::RBNVariablesSequence variablesSequence;
+	boost::graph_traits<Graph>::vertex_iterator vertexIt, end;
+	std::map<std::string, VertexDescriptor> verticeContainer;
+	std::vector<std::pair<std::string,std::string>> arrows;
+
+	for(boost::tie(vertexIt, end) = vertices(graph); vertexIt != end; vertexIt++){
+		vertexName = vertexIdPropertyMap[*vertexIt];
+		verticeContainer[vertexName] = *vertexIt;
+		if(rbn->existsNode(vertexName)){
+			variablesSequence = rbn->getParents(vertexName);
+			for(unsigned int i = 0; i < variablesSequence.dim(); i++){
+				parentName = variablesSequence[i]->toString();
+				arrows.push_back(std::pair<std::string,std::string>(parentName, vertexName));
+			}
+		}
+	}
+
+	std::vector<std::pair<std::string,std::string>>::iterator it;
+	VertexDescriptor vd1, vd2;
+	std::pair<boost::graph_traits<Graph>::edge_descriptor, bool> existEdge;
+
+	for(it = arrows.begin(); it != arrows.end();it++){
+		vd1 = verticeContainer[(*it).first];
+		vd2 = verticeContainer[(*it).second];
+
+		existEdge = edge(vd1, vd2, graph);
+		if(existEdge.second){
+			edgesContainer.push_back(existEdge.first);
+		}
+	}
+
 }
 
 void PRMDisplay::initGraph(){
@@ -1251,20 +1302,20 @@ void PRMDisplay::initGraph(){
 
 	vd2 = boost::add_vertex(graph);
 	vertexIdPropertyMap[vd2] = "10_10";
-	positionMap[vd2][0]=10;
-	positionMap[vd2][1]=10;
+	positionMap[vd2][0]=6.23;
+	positionMap[vd2][1]=10.54;
 
 	vd3 = boost::add_vertex(graph);
 	vertexIdPropertyMap[vd3] = "0_10";
-	positionMap[vd3][0]=0;
-	positionMap[vd3][1]=10;
+	positionMap[vd3][0]=0.26;
+	positionMap[vd3][1]=10.98;
 
 	vd4 = boost::add_vertex(graph);
 	vertexIdPropertyMap[vd4] = "10_0";
-	positionMap[vd4][0]=10;
-	positionMap[vd4][1]=0;
+	positionMap[vd4][0]=2.985;
+	positionMap[vd4][1]=2.14;
 
-	vd5 = boost::add_vertex(graph);
+	/*vd5 = boost::add_vertex(graph);
 	vertexIdPropertyMap[vd5] = "1_1";
 	positionMap[vd5][0]=1;
 	positionMap[vd5][1]=1;
@@ -1284,9 +1335,210 @@ void PRMDisplay::initGraph(){
 	positionMap[vd8][0]=9;
 	positionMap[vd8][1]=8;
 	
-
+	*/
 	boost::add_edge(vd1, vd2, EdgeProperty(1), graph);
+	boost::add_edge(vd1, vd3, EdgeProperty(1), graph);
+	boost::add_edge(vd1, vd4, EdgeProperty(1), graph);
 	boost::add_edge(vd3, vd4, EdgeProperty(1), graph);
-	boost::add_edge(vd7, vd8, EdgeProperty(1), graph);
-	boost::add_edge(vd5, vd6, EdgeProperty(1), graph);
+}
+
+double PRMDisplay::angleScore(){
+	boost::graph_traits<Graph>::vertex_iterator vertexIt, end;
+	boost::graph_traits<Graph>::in_edge_iterator beginEdge1, endEdge, beginEdge2;
+	VertexDescriptor v, v1, v2, tmpV1, tmpV2;
+	vertexIdPropertyMap = boost::get(&VertexProperties::index, graph);
+	positionMap = boost::get(&VertexProperties::point, graph);
+	std::pair<double, double> edgeVector1, edgeVector2;
+	double magnitudeEdgeVector1, magnitudeEdgeVector2, dotProduct, angle, idealAngle;
+	double angleMin = 2 * PI;
+	double result = 0.0;
+
+	int vertexDegree;
+
+    for (boost::tie(vertexIt, end) = boost::vertices(graph); vertexIt != end; ++vertexIt) {// pour chaque sommet
+		vertexDegree = boost::in_degree(*vertexIt, graph);
+		idealAngle = 2*PI / static_cast<double>(vertexDegree);
+
+		v = *vertexIt;
+		for(boost::tie(beginEdge1, endEdge) = boost::in_edges(*vertexIt, graph); beginEdge1 != boost::prior(endEdge); beginEdge1++){//pour chaque arête
+
+			for(beginEdge2 = boost::next(beginEdge1); beginEdge2 != endEdge; beginEdge2++){// comparaison avec une autre arête
+				//récupération des vecteur [v v1] et [v v2]
+				tmpV1 = boost::source(*beginEdge1, graph);
+				if(vertexIdPropertyMap[tmpV1].compare(vertexIdPropertyMap[v]) == 0){ // si la source est le vertex
+					v1 = boost::target(*beginEdge1, graph); // alors v1 est le target
+				} else {
+					v1 = tmpV1; // sinon v1 est la source
+				}
+
+				tmpV2 = boost::source(*beginEdge2, graph);
+
+				if(vertexIdPropertyMap[tmpV2].compare(vertexIdPropertyMap[v]) == 0){ // si la source est le vertex
+					v2 = boost::target(*beginEdge2, graph); // alors v2 est le target
+				} else {
+					v2 = tmpV2; // sinon v2 est la source
+				}
+
+				//calcul des vecteurs centré en v
+				edgeVector1.first = positionMap[v1][0] - positionMap[v][0];
+				edgeVector1.second = positionMap[v1][1] - positionMap[v][1];
+				edgeVector2.first = positionMap[v2][0] - positionMap[v][0];
+				edgeVector2.second = positionMap[v2][1] - positionMap[v][1];
+
+				//calcule de l'angle
+				magnitudeEdgeVector1 = sqrt(pow(edgeVector1.first,2)+pow(edgeVector1.second,2));
+				magnitudeEdgeVector2 = sqrt(pow(edgeVector2.first,2)+pow(edgeVector2.second,2));
+				dotProduct = edgeVector1.first * edgeVector2.first + edgeVector1.second * edgeVector2.second;
+
+				angle = std::acos(dotProduct / (magnitudeEdgeVector1 * magnitudeEdgeVector2));
+
+				angle = min(angle, 2 * PI - angle);
+				
+				//conservation du minimum
+				angleMin = min(angleMin, angle);
+			}
+		}
+
+		result += (idealAngle - angleMin) / idealAngle;
+		angleMin = 2 * PI;
+	}
+	return 1- (result / static_cast<double>(boost::num_vertices(graph)));
+}
+
+double PRMDisplay::orthogonalityScore(){
+	positionMap = boost::get(&VertexProperties::point, graph);
+	boost::graph_traits<Graph>::vertex_iterator vertexIt, end, secondVertexIt;
+	const int coef = 1; // permet d'améliorer la précision si on augmente le coef
+	bool firstLoopX = true, firstLoopY = true;
+	long gcdX, gcdY, tmp1, tmp2, height, weight, minX, maxX, minY, maxY;
+	Points minPoint, maxPoint;
+
+	//calculer le PGCD en x et en y
+	for(boost::tie(vertexIt, end) = vertices(graph);vertexIt != boost::prior(end); vertexIt++){
+		for(secondVertexIt = boost::next(vertexIt); secondVertexIt != end; secondVertexIt++){
+			tmp1 = static_cast<long>(coef * abs(positionMap[*vertexIt][0] - positionMap[*secondVertexIt][0]) + 0.5);
+			tmp2 = static_cast<long>(coef * abs(positionMap[*vertexIt][1] - positionMap[*secondVertexIt][1]) + 0.5);
+
+			if(firstLoopX){
+				if(tmp1!=0){
+					gcdX = tmp1;
+					firstLoopX = false;
+				}
+			} else {
+				if(tmp1 != 0)
+					gcdX = pgcd(gcdX, tmp1);
+			}
+			
+			if(firstLoopY){
+				if(tmp2!=0){
+					gcdY = tmp2;
+					firstLoopY = false;
+				}
+			} else {
+				if(tmp2 != 0)
+					gcdY = pgcd(gcdY, tmp2);
+			}
+		}
+	}
+	/**calculer le score**/
+	//calculer les valeurs extrêmes et les diviser par le PGCD
+	boost::tie(minPoint, maxPoint) = getExtremGraphPoint(graph);
+	minX = static_cast<long>(minPoint[0] * coef + 0.5);
+	maxX = static_cast<long>(maxPoint[0] * coef + 0.5);
+	minY = static_cast<long>(minPoint[1] * coef + 0.5);
+	maxY = static_cast<long>(maxPoint[1] * coef + 0.5);
+
+	weight = ((maxX - minX) / gcdX) +1;
+	height = ((maxY - minY) / gcdY) +1;
+
+	return static_cast<double>(num_vertices(graph))/static_cast<double>(weight*height);
+
+}
+
+long PRMDisplay::pgcd(long a, long b)
+{
+//Calcul du PGCD de deux nombres par la methode d'Euclide
+    long pgcd;
+	while(a!=b) {
+		if(a>b)
+		a=a-b;
+		else
+		b=b-a;
+	};
+	pgcd=a;
+
+    return pgcd;
+}
+
+int PRMDisplay::inverseArrowScore(){
+	boost::graph_traits<Graph>::vertex_iterator vertexIt, end;
+	vertexIdPropertyMap = boost::get(&VertexProperties::index, graph);
+	std::string vertexName, parentName;
+	std::map<std::string, VertexDescriptor> verticeContainer;
+	prm::RBNVariablesSequence variablesSequence;
+	std::vector<std::pair<std::string,std::string>> arrows;
+
+	//récupérer le sens des flèches
+	for(boost::tie(vertexIt,end) = vertices(graph);vertexIt != end; vertexIt++){
+		vertexName = vertexIdPropertyMap[*vertexIt];
+		verticeContainer[vertexName] = *vertexIt;
+		if(rbn->existsNode(vertexName)){
+			variablesSequence = rbn->getParents(vertexName);
+			for(unsigned int i = 0; i < variablesSequence.dim(); i++){
+				parentName = variablesSequence[i]->toString();
+				arrows.push_back(std::pair<std::string,std::string>(parentName, vertexName));
+			}
+		}
+	}
+	//calculer l'angle moyen à partir d'un vecteur [0 1] de norme 1
+
+	std::vector<std::pair<std::string,std::string>>::iterator it;
+	VertexDescriptor vd1, vd2;
+	positionMap = boost::get(&VertexProperties::point, graph);
+	double x, y, magnitude, magnitudeMean, dotProduct, xMean, yMean;
+	double meanAngle, i;
+	meanAngle = i = xMean = yMean = 0.0;
+
+	for(it = arrows.begin(); it != arrows.end(); it++){
+		vd1 = verticeContainer[(*it).first];
+		vd2 = verticeContainer[(*it).second];
+
+		x = positionMap[vd2][0] - positionMap[vd1][0];
+		y = positionMap[vd2][1] - positionMap[vd1][1];
+		
+		xMean += x;
+		yMean += y;
+
+		i+=1.0;
+	}
+
+	xMean = xMean / i;
+	yMean = yMean / i;
+
+	magnitudeMean = sqrt(pow(xMean,2) + pow(yMean,2));
+	//dotProduct = xMean*1 + yMean*0;
+	//meanAngle = std::acos(dotProduct / (magnitudeMean * 1));
+
+	int result = 0;
+	double angle;
+
+	for(it = arrows.begin(); it != arrows.end(); it++){
+		vd1 = verticeContainer[(*it).first];
+		vd2 = verticeContainer[(*it).second];
+
+		x = positionMap[vd2][0] - positionMap[vd1][0];
+		y = positionMap[vd2][1] - positionMap[vd1][1];
+		magnitude = sqrt(pow(x,2) + pow(y,2));
+		dotProduct = x*xMean + y*yMean;
+
+			angle = std::acos(dotProduct / (magnitude * magnitudeMean));
+		
+		// est ce que la différence d'angle est entre -PI/2 et PI/2
+		if( (angle > PI/2) ){
+			result++;
+		}
+	}
+
+
+	return result;
 }
